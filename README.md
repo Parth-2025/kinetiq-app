@@ -1,3 +1,5 @@
+RimReady democratizes elite coaching by turning any phone into a professional trainer. Using MediaPipe for skeletal tracking and Gemini for multimodal biomechanical analysis, we provide real-time, spoken feedback via ElevenLabs. We gamify the grind with XP and badges, leveling the playing field for athletes on every court.
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
