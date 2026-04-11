@@ -1,13 +1,16 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAuth } from '@/context/auth-context';
 import { Link } from 'expo-router';
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -74,6 +77,15 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+
+      <Pressable
+        style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
+        onPress={logout}
+        accessibilityRole="button"
+        accessibilityLabel="Log out"
+      >
+        <ThemedText style={styles.logoutText}>Log Out</ThemedText>
+      </Pressable>
     </ParallaxScrollView>
   );
 }
@@ -94,5 +106,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  logoutBtn: {
+    marginTop: 8,
+    marginBottom: 16,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e53935',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutBtnPressed: {
+    opacity: 0.7,
+  },
+  logoutText: {
+    color: '#e53935',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
