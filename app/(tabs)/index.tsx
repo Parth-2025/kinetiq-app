@@ -1,98 +1,149 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from "react";
+import { Pressable, StyleSheet, View, useColorScheme } from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { useAuth } from "@/providers/AuthProvider";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user, signOut } = useAuth();
+  const isDark = useColorScheme() === "dark";
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const email = user?.email ?? "";
+  const displayName = email.split("@")[0] ?? "Athlete";
+  const initial = displayName[0]?.toUpperCase() ?? "?";
+
+  const cardBg = isDark ? "#1a1c1e" : "#f4f8fb";
+
+  return (
+    <ThemedView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <ThemedText style={styles.greeting}>{getGreeting()},</ThemedText>
+        <ThemedText type="title">{displayName}</ThemedText>
+      </View>
+
+      {/* Account card */}
+      <View style={[styles.card, { backgroundColor: cardBg }]}>
+        <View style={styles.cardRow}>
+          <View style={styles.avatar}>
+            <ThemedText style={styles.avatarText}>{initial}</ThemedText>
+          </View>
+          <View style={styles.cardInfo}>
+            <ThemedText type="defaultSemiBold">{displayName}</ThemedText>
+            <ThemedText style={styles.emailText}>{email}</ThemedText>
+          </View>
+        </View>
+      </View>
+
+      {/* Stats row */}
+      <View style={styles.statsRow}>
+        {[
+          { value: "—", label: "Sessions" },
+          { value: "—", label: "Streak" },
+          { value: "—", label: "Goals" },
+        ].map((stat) => (
+          <View
+            key={stat.label}
+            style={[styles.statCard, { backgroundColor: cardBg }]}
+          >
+            <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
+            <ThemedText style={styles.statLabel}>{stat.label}</ThemedText>
+          </View>
+        ))}
+      </View>
+
+      {/* Sign out */}
+      <Pressable style={styles.signOut} onPress={() => signOut()}>
+        <ThemedText style={styles.signOutText}>Sign out</ThemedText>
+      </Pressable>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 24,
+    gap: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    marginTop: 12,
+    gap: 2,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  greeting: {
+    fontSize: 15,
+    opacity: 0.5,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  card: {
+    padding: 16,
+    borderRadius: 16,
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#0a7ea4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  cardInfo: {
+    gap: 2,
+  },
+  emailText: {
+    fontSize: 13,
+    opacity: 0.5,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    gap: 4,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  statLabel: {
+    fontSize: 12,
+    opacity: 0.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  signOut: {
+    marginTop: "auto",
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#e74c3c",
+  },
+  signOutText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });
