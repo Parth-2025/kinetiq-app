@@ -1,2 +1,1 @@
-# BioStrides
-Bio-Strides is a quantitative health-tech framework developed for Bitcamp 2026. While standard fitness trackers focus on distance and pace, Bio-Strides audits the physics of the stride. By extracting many 3D skeletal points via MediaPipe, the engine performs a statistical comparison between the user's current gait and an "Elite Baseline" library.
+RimReady democratizes elite coaching by turning any phone into a professional trainer. Using MediaPipe for skeletal tracking and Gemini for multimodal biomechanical analysis, we provide real-time, spoken feedback via ElevenLabs. We gamify the grind with XP and badges, leveling the playing field for athletes on every court.
