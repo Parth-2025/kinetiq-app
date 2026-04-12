@@ -60,3 +60,12 @@ export interface AnalysisSession {
   source: VideoAssetMetadata;
   analysis: AnalysisResult;
 }
+
+export interface StoredLeaderboardSportStats {
+  first_score: number;
+  max_score: number;
+  most_improved: number;
+  num_videos: number;
+  latest_score: number;
+  updatedAt: string;
+}

@@ -2,6 +2,7 @@ import type { ImagePickerAsset } from "expo-image-picker";
 import { push, ref, set } from "firebase/database";
 
 import { db } from "@/config/firebase";
+import { updateSportLeaderboardStats } from "@/services/leaderboard";
 import type { AnalysisResult, AnalysisSession } from "@/types/analysis";
 
 export async function saveAnalysisSession(params: {
@@ -36,6 +37,10 @@ export async function saveAnalysisSession(params: {
 
   await set(sessionRef, session);
   await set(ref(db, `users/${userId}/analysis/activeSessionId`), session.id);
+  await updateSportLeaderboardStats({
+    userId,
+    score: analysis.overall_score,
+  });
 
   return session;
 }

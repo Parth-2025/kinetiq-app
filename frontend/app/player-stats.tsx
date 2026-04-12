@@ -34,8 +34,6 @@ export default function PlayerStatsScreen() {
     ? user.name.toUpperCase()
     : 'PLAYER';
 
-  const initial = (user?.name ?? 'P')[0].toUpperCase();
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
