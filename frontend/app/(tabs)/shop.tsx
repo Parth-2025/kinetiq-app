@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,6 +52,7 @@ import { useProfileCustomization } from '@/hooks/use-profile-customization';
 export default function ShopScreen() {
   const { user } = useAuth();
   const { customization, isLoading, isSaving, saveCustomization } = useProfileCustomization(user?.sub);
+  const { width: screenWidth } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ShopTab>('avatars');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [pendingPurchase, setPendingPurchase] = useState<
@@ -153,6 +155,7 @@ export default function ShopScreen() {
 
   const equippedAvatar = getAvatarById(customization.equippedAvatarId);
   const equippedBanner = getBannerById(customization.equippedBannerId);
+  const avatarCardWidth = Math.floor((screenWidth - 78) / 2);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -226,6 +229,7 @@ export default function ShopScreen() {
                     key={item.id}
                     style={[
                       styles.avatarCard,
+                      { width: avatarCardWidth },
                       isEquipped && styles.selectedCard,
                     ]}
                     onPress={() => handleAvatarPress(item)}
@@ -457,12 +461,12 @@ const styles = StyleSheet.create({
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    justifyContent: 'space-between',
+    rowGap: 14,
     paddingHorizontal: 14,
     paddingTop: 18,
   },
   avatarCard: {
-    width: '48%',
     backgroundColor: APP_SURFACE_ALT,
     borderRadius: 24,
     paddingHorizontal: 14,
