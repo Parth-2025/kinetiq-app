@@ -3,20 +3,22 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { db } from '@/config/firebase';
 
-/**
- * Read a numeric value from the Realtime Database once.
- *
- * Usage:
- *   const { value, isLoading, error } = useDatabaseValue('stats/max_score');
- */
-export function useDatabaseValue(path: string) {
-  const [value, setValue] = useState<number | null>(null);
+export function useDatabaseValue<T>(path: string | null) {
+  const [value, setValue] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!path) {
+      setValue(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
     get(ref(db, path))
-      .then((snapshot) => setValue(snapshot.exists() ? (snapshot.val() as number) : null))
+      .then((snapshot) => setValue(snapshot.exists() ? (snapshot.val() as T) : null))
       .catch((err) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setIsLoading(false));
   }, [path]);
@@ -24,19 +26,16 @@ export function useDatabaseValue(path: string) {
   return { value, isLoading, error };
 }
 
-/**
- * Write a numeric value to the Realtime Database.
- *
- * Usage:
- *   const { write, isLoading, error } = useDatabaseWrite('stats/max_score');
- *   await write(42);
- */
-export function useDatabaseWrite(path: string) {
+export function useDatabaseWrite<T>(path: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const write = useCallback(
-    async (value: number) => {
+    async (value: T) => {
+      if (!path) {
+        throw new Error('Cannot write to the Realtime Database without a path.');
+      }
+
       setIsLoading(true);
       setError(null);
       try {
@@ -54,18 +53,20 @@ export function useDatabaseWrite(path: string) {
   return { write, isLoading, error };
 }
 
-/**
- * Subscribe to any value in the Realtime Database with live updates.
- *
- * Usage:
- *   const { value } = useDatabaseLiveValue<string>('users/abc/sports/active');
- */
-export function useDatabaseLiveValue<T>(path: string) {
+export function useDatabaseLiveValue<T>(path: string | null) {
   const [value, setValue] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!path) {
+      setValue(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
     const unsubscribe = onValue(
       ref(db, path),
       (snapshot) => {

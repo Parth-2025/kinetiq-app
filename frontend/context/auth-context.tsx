@@ -53,6 +53,45 @@ function getRedirectUri(): string {
   });
 }
 
+function getNativeLogoutUri(): string {
+  return AuthSession.makeRedirectUri({
+    scheme: "rimready",
+    path: "",
+    native: "rimready://",
+  });
+}
+
+function getWebOrigin(): string | null {
+  if (Platform.OS !== "web") {
+    return null;
+  }
+
+  const { protocol, hostname, port } = window.location;
+  return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+}
+
+function logAuth0Urls(context: string) {
+  if (!__DEV__) {
+    return;
+  }
+
+  const redirectUri = getRedirectUri();
+  const webOrigin = getWebOrigin();
+  const nativeLogoutUri = getNativeLogoutUri();
+  const logoutReturnUri =
+    Platform.OS === "web" ? redirectUri : nativeLogoutUri;
+
+  console.log(`[Auth0 Debug] ${context}`);
+  console.log(`[Auth0 Debug] Domain: ${auth0Config.domain}`);
+  console.log(`[Auth0 Debug] Client ID: ${auth0Config.clientId}`);
+  console.log(`[Auth0 Debug] Callback URL: ${redirectUri}`);
+  console.log(`[Auth0 Debug] Logout URL: ${logoutReturnUri}`);
+
+  if (webOrigin) {
+    console.log(`[Auth0 Debug] Web Origin: ${webOrigin}`);
+  }
+}
+
 /** Generate a cryptographically random PKCE code verifier (web only). */
 async function generateVerifier(): Promise<string> {
   const bytes = new Uint8Array(32);
@@ -101,6 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Auth0User | null>(null);
   // Stay in loading state until we've validated the session.
   const [isLoading, setIsLoading] = useState(Platform.OS === "web");
+
+  useEffect(() => {
+    logAuth0Urls("App boot");
+  }, []);
 
   // On web startup: validate any stored token against Auth0 before trusting it.
   useEffect(() => {
@@ -151,6 +194,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const authorize = useCallback(
     async (screenHint: "login" | "signup" = "login") => {
+      logAuth0Urls(`Authorize: ${screenHint}`);
+
       // ── Web: full-page redirect (no popup / new tab) ──────────────────────
       if (Platform.OS === "web") {
         const verifier = await generateVerifier();
@@ -245,11 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // ── Native ────────────────────────────────────────────────────────────
     setIsLoading(true);
     try {
-      const returnTo = AuthSession.makeRedirectUri({
-        scheme: "rimready",
-        path: "",
-        native: "rimready://",
-      });
+      const returnTo = getNativeLogoutUri();
       const logoutUrl =
         `https://${auth0Config.domain}/v2/logout` +
         `?client_id=${encodeURIComponent(auth0Config.clientId)}` +
