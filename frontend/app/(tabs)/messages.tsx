@@ -9,7 +9,17 @@ import {
   getAvatarById,
   getBannerById,
 } from '@/components/profile-cosmetics';
-import { HOME_BG, HOME_CARD, HOME_LABEL, HOME_TEXT, PURPLE } from '@/constants/colors';
+import {
+  ACCENT_SURFACE,
+  APP_SHADOW,
+  APP_SURFACE_SUBTLE,
+  HOME_BG,
+  HOME_CARD,
+  HOME_LABEL,
+  HOME_TEXT,
+  PURPLE,
+  WHITE,
+} from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
 import { useProfileCustomization } from '@/hooks/use-profile-customization';
 
@@ -107,7 +117,7 @@ const styles = StyleSheet.create({
     backgroundColor: HOME_CARD,
     borderRadius: 28,
     padding: 12,
-    shadowColor: '#111827',
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.08,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
@@ -119,7 +129,7 @@ const styles = StyleSheet.create({
     top: 70,
     padding: 4,
     borderRadius: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: WHITE,
   },
   heroMeta: {
     marginTop: 42,
@@ -149,7 +159,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#F4F1FF',
+    backgroundColor: ACCENT_SURFACE,
   },
   pointsPillText: {
     fontSize: 14,
@@ -160,7 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: HOME_CARD,
     borderRadius: 28,
     padding: 18,
-    shadowColor: '#111827',
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.05,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -181,7 +191,7 @@ const styles = StyleSheet.create({
   threadCard: {
     marginTop: 18,
     borderRadius: 22,
-    backgroundColor: '#F7F7FB',
+    backgroundColor: APP_SURFACE_SUBTLE,
     padding: 14,
   },
   threadHeader: {
@@ -223,7 +233,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   messageTextPrimary: {
-    color: '#FFFFFF',
+    color: WHITE,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
@@ -233,7 +243,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     maxWidth: '85%',
     borderRadius: 20,
-    backgroundColor: '#E9E8F5',
+    backgroundColor: ACCENT_SURFACE,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },

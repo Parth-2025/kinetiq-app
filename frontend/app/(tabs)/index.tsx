@@ -9,6 +9,9 @@ import {
   getBannerById,
 } from '@/components/profile-cosmetics';
 import {
+  ACCENT_SURFACE,
+  APP_SHADOW,
+  APP_TRACK,
   DANGER,
   HOME_BG,
   HOME_CARD,
@@ -208,7 +211,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   shopPill: {
-    backgroundColor: '#F4F1FF',
+    backgroundColor: ACCENT_SURFACE,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
     backgroundColor: HOME_CARD,
     borderRadius: 18,
     padding: 18,
-    shadowColor: '#000',
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
   // Progress
   progressTrack: {
     height: 10,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: APP_TRACK,
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 8,

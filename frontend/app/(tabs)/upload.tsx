@@ -16,17 +16,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { saveAnalysisSession } from "@/services/analysis-sessions";
 import { analyzeVideo } from "@/services/kinetiq-api";
-import { PURPLE } from "@/constants/colors";
+import {
+  ACCENT_BORDER,
+  APP_BG,
+  APP_SHADOW,
+  APP_SURFACE,
+  APP_TEXT,
+  APP_TEXT_MUTED,
+  PURPLE,
+  PURPLE_TINT_STRONG,
+  SUCCESS,
+  SUCCESS_BORDER,
+  SUCCESS_SURFACE,
+  WHITE,
+} from "@/constants/colors";
 import { useAuth } from "@/context/auth-context";
 import { useDatabaseLiveValue } from "@/hooks/use-database";
 import { formatUserId } from "@/utils/user";
-
-const PURPLE_LIGHT = "#ECEAFF";
-const BG = "#F2F2F7";
-const CARD_BG = "#FFFFFF";
-const TEXT_DARK = "#1C1C1E";
-const TEXT_MUTED = "#8E8E93";
-const SUCCESS = "#22C55E";
 
 const REQUIREMENTS = [
   "Side angle shot",
@@ -149,7 +155,7 @@ function BasketballUpload() {
             <MaterialIcons
               name={isSubmitting ? "sync" : "upload"}
               size={20}
-              color="#fff"
+              color={WHITE}
             />
             <Text style={styles.selectBtnText}>
               {isSubmitting ? "Analyzing..." : "Select File"}
@@ -227,7 +233,7 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: APP_BG,
   },
   scroll: {
     flex: 1,
@@ -238,12 +244,12 @@ const styles = StyleSheet.create({
   },
   blank: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: APP_BG,
   },
   card: {
-    backgroundColor: CARD_BG,
+    backgroundColor: APP_SURFACE,
     borderRadius: 20,
-    shadowColor: "#000",
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.07,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
@@ -254,7 +260,7 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#CBCBE8",
+    borderColor: ACCENT_BORDER,
     borderStyle: "dashed",
     alignItems: "center",
     paddingVertical: 36,
@@ -265,7 +271,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: PURPLE_LIGHT,
+    backgroundColor: PURPLE_TINT_STRONG,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -273,12 +279,12 @@ const styles = StyleSheet.create({
   chooseTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: TEXT_DARK,
+    color: APP_TEXT,
     letterSpacing: -0.3,
   },
   chooseSub: {
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: APP_TEXT_MUTED,
     textAlign: "center",
     lineHeight: 22,
   },
@@ -296,14 +302,14 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   selectBtnText: {
-    color: "#fff",
+    color: WHITE,
     fontSize: 16,
     fontWeight: "700",
   },
   fileName: {
     marginTop: 4,
     fontSize: 13,
-    color: TEXT_DARK,
+    color: APP_TEXT,
     fontWeight: "600",
   },
   statusMessage: {
@@ -316,7 +322,7 @@ const styles = StyleSheet.create({
   reqCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: PURPLE_LIGHT,
+    backgroundColor: PURPLE_TINT_STRONG,
     borderRadius: 14,
     padding: 18,
     gap: 10,
@@ -324,7 +330,7 @@ const styles = StyleSheet.create({
   reqTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: TEXT_DARK,
+    color: APP_TEXT,
     marginBottom: 2,
   },
   reqRow: {
@@ -355,12 +361,12 @@ const styles = StyleSheet.create({
   },
   infoBullet: {
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: APP_TEXT_MUTED,
     lineHeight: 22,
   },
   infoText: {
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: APP_TEXT_MUTED,
     flex: 1,
     lineHeight: 22,
   },
@@ -370,9 +376,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: "#F6FFF8",
+    backgroundColor: SUCCESS_SURFACE,
     borderWidth: 1,
-    borderColor: "#C9F1D3",
+    borderColor: SUCCESS_BORDER,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

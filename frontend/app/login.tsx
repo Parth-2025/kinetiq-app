@@ -18,6 +18,7 @@ import {
   AUTH_TEXT,
   PURPLE,
   TEAL,
+  WHITE_15,
 } from "@/constants/colors";
 import { useAuth } from "@/context/auth-context";
 
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: WHITE_15,
   },
   orText: {
     color: AUTH_MUTED,

@@ -12,7 +12,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { db } from '@/config/firebase';
-import { HOME_BG, HOME_CARD, HOME_LABEL, HOME_TEXT, PURPLE } from '@/constants/colors';
+import {
+  ACCENT_SURFACE_ALT,
+  APP_BORDER,
+  APP_OVERLAY,
+  APP_SHADOW,
+  APP_SURFACE_SUBTLE,
+  HOME_BG,
+  HOME_CARD,
+  HOME_LABEL,
+  HOME_TEXT,
+  PURPLE,
+  WHITE,
+} from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
 import { useDatabaseLiveValue } from '@/hooks/use-database';
 
@@ -164,7 +176,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: APP_BORDER,
     backgroundColor: HOME_BG,
   },
   backBtn: {
@@ -204,7 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: HOME_CARD,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -219,10 +231,10 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: APP_BORDER,
   },
   rowActive: {
-    backgroundColor: '#EEF0FF',
+    backgroundColor: ACCENT_SURFACE_ALT,
   },
   emoji: {
     fontSize: 26,
@@ -242,7 +254,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   activeBadgeText: {
-    color: '#fff',
+    color: WHITE,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -264,7 +276,7 @@ const styles = StyleSheet.create({
   // Modal
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: APP_OVERLAY,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 40,
@@ -303,7 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelBtn: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: APP_SURFACE_SUBTLE,
   },
   cancelText: {
     fontSize: 16,
@@ -316,6 +328,6 @@ const styles = StyleSheet.create({
   addText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: WHITE,
   },
 });

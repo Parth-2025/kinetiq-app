@@ -27,7 +27,24 @@ import {
   type ProfileCustomizationState,
   type ShopTab,
 } from '@/components/profile-cosmetics';
-import { HOME_BG, HOME_CARD, HOME_LABEL, HOME_TEXT, PURPLE } from '@/constants/colors';
+import {
+  APP_OVERLAY,
+  APP_SHADOW,
+  APP_SURFACE,
+  APP_SURFACE_ALT,
+  APP_TEXT_MUTED,
+  APP_BORDER_SOFT,
+  HOME_BG,
+  HOME_CARD,
+  HOME_LABEL,
+  HOME_TEXT,
+  PURPLE,
+  WHITE,
+  WHITE_12,
+  WHITE_18,
+  WHITE_72,
+  WHITE_82,
+} from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
 import { useProfileCustomization } from '@/hooks/use-profile-customization';
 
@@ -216,7 +233,7 @@ export default function ShopScreen() {
                   >
                     <View style={styles.checkBadge}>
                       {isEquipped ? (
-                        <MaterialIcons name="check" size={16} color="#FFFFFF" />
+                        <MaterialIcons name="check" size={16} color={WHITE} />
                       ) : null}
                     </View>
                     <AvatarArtwork avatar={item} size={112} />
@@ -247,7 +264,7 @@ export default function ShopScreen() {
                   >
                     <View style={styles.bannerCheckBadge}>
                       {isEquipped ? (
-                        <MaterialIcons name="check" size={16} color="#FFFFFF" />
+                        <MaterialIcons name="check" size={16} color={WHITE} />
                       ) : null}
                     </View>
                     <BannerArtwork banner={item} />
@@ -332,19 +349,19 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 42,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: WHITE,
     letterSpacing: -1.2,
   },
   heroSubtitle: {
     marginTop: 6,
     fontSize: 19,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.82)',
+    color: WHITE_82,
   },
   pointsCard: {
     marginTop: 22,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: WHITE_18,
     paddingHorizontal: 18,
     paddingVertical: 18,
     flexDirection: 'row',
@@ -354,24 +371,24 @@ const styles = StyleSheet.create({
   pointsLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: WHITE,
   },
   pointsHint: {
     marginTop: 4,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.72)',
+    color: WHITE_72,
   },
   pointsValue: {
     fontSize: 36,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: WHITE,
     letterSpacing: -1,
   },
   previewShell: {
     marginTop: 20,
     borderRadius: 28,
     padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: WHITE_12,
   },
   previewAvatar: {
     position: 'absolute',
@@ -379,7 +396,7 @@ const styles = StyleSheet.create({
     left: 18,
     padding: 4,
     borderRadius: 52,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: APP_SURFACE,
   },
   panel: {
     marginTop: -42,
@@ -388,7 +405,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingTop: 14,
     paddingBottom: 12,
-    shadowColor: '#111827',
+    shadowColor: APP_SHADOW,
     shadowOpacity: 0.1,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
@@ -407,11 +424,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#ECEAFB',
+    borderColor: APP_BORDER_SOFT,
   },
   tabButtonActive: {
     borderColor: PURPLE,
-    backgroundColor: '#F7F5FF',
+    backgroundColor: APP_SURFACE_ALT,
   },
   tabLabel: {
     fontSize: 16,
@@ -446,18 +463,18 @@ const styles = StyleSheet.create({
   },
   avatarCard: {
     width: '48%',
-    backgroundColor: '#FBFBFE',
+    backgroundColor: APP_SURFACE_ALT,
     borderRadius: 24,
     paddingHorizontal: 14,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#F0EDFF',
+    borderColor: APP_BORDER_SOFT,
     position: 'relative',
   },
   selectedCard: {
     borderColor: PURPLE,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: APP_SURFACE,
   },
   checkBadge: {
     position: 'absolute',
@@ -498,11 +515,11 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   bannerCard: {
-    backgroundColor: '#FBFBFE',
+    backgroundColor: APP_SURFACE_ALT,
     borderRadius: 24,
     padding: 14,
     borderWidth: 2,
-    borderColor: '#F0EDFF',
+    borderColor: APP_BORDER_SOFT,
     position: 'relative',
   },
   bannerCheckBadge: {
@@ -526,7 +543,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: APP_OVERLAY,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 40,
@@ -556,7 +573,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 16,
-    backgroundColor: '#F7F5FF',
+    backgroundColor: APP_SURFACE_ALT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -564,7 +581,7 @@ const styles = StyleSheet.create({
   modalCostLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: HOME_LABEL,
+    color: APP_TEXT_MUTED,
   },
   modalCostValue: {
     fontSize: 15,
@@ -584,7 +601,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelBtn: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: HOME_BG,
   },
   cancelText: {
     fontSize: 16,
@@ -597,6 +614,6 @@ const styles = StyleSheet.create({
   addText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: WHITE,
   },
 });
