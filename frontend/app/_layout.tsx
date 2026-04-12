@@ -24,6 +24,8 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen name="messages/[friendId]" options={{ headerShown: false }} />
+          <Stack.Screen name="messages/new" options={{ headerShown: false }} />
+          <Stack.Screen name="friends/add" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="sports" options={{ headerShown: false }} />
           <Stack.Screen name="shot-breakdown" options={{ headerShown: false }} />

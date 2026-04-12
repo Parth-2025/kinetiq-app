@@ -27,24 +27,21 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useSocialInbox } from '@/hooks/use-social-inbox';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { type SocialFriend, type SocialInboxState } from '@/types/social';
 import {
   formatRelativeTime,
   getIdentityColor,
   getInitials,
   getThreadPreview,
-  upsertFriend,
 } from '@/utils/social';
 
 export default function MessagesScreen() {
   const { user } = useAuth();
   const { profile } = useUserProfile(user?.sub);
-  const { inbox, isLoading, isSaving, saveInbox } = useSocialInbox(
+  const { inbox, isLoading } = useSocialInbox(
     user?.sub,
     profile?.username,
   );
   const [searchText, setSearchText] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
 
   const friendsById = useMemo(
     () => new Map(inbox.friends.map((friend) => [friend.id, friend])),
@@ -74,64 +71,10 @@ export default function MessagesScreen() {
       });
   }, [friendsById, inbox.threads, searchText]);
 
-  const visibleSuggestions = useMemo(() => {
-    const normalizedSearch = searchText.trim().toLowerCase();
-
-    return inbox.suggestions.filter((suggestion) => {
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      const haystack = `${suggestion.username} ${suggestion.status} ${suggestion.sport}`.toLowerCase();
-      return haystack.includes(normalizedSearch);
-    });
-  }, [inbox.suggestions, searchText]);
-
-  async function commitInbox(nextInbox: SocialInboxState, message: string) {
-    setFeedback(null);
-
-    try {
-      await saveInbox(nextInbox);
-      setFeedback(message);
-    } catch {
-      setFeedback('We could not save your messages right now.');
-    }
-  }
-
-  async function handleAddFriend(friend: SocialFriend) {
-    const withFriend = upsertFriend(inbox, friend);
-    const hasThread = withFriend.threads.some((thread) => thread.participantId === friend.id);
-
-    const nextInbox: SocialInboxState = hasThread
-      ? withFriend
-      : {
-          ...withFriend,
-          threads: [
-            {
-              id: `thread-${friend.id}`,
-              participantId: friend.id,
-              updatedAt: new Date().toISOString(),
-              unreadCount: 0,
-              messages: [],
-            },
-            ...withFriend.threads,
-          ],
-        };
-
-    await commitInbox(nextInbox, `@${friend.username} added to your friends.`);
-  }
-
-  function openThread(friendId?: string) {
-    const targetFriendId = friendId ?? inbox.friends[0]?.id;
-
-    if (!targetFriendId) {
-      setFeedback('Add a friend first to start a conversation.');
-      return;
-    }
-
+  function openThread(friendId: string) {
     router.push({
       pathname: '/messages/[friendId]',
-      params: { friendId: targetFriendId },
+      params: { friendId },
     });
   }
 
@@ -149,12 +92,15 @@ export default function MessagesScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.actionIcon} onPress={() => openThread()}>
+            <Pressable
+              style={styles.actionIcon}
+              onPress={() => router.push('/messages/new')}
+            >
               <MaterialIcons name="edit" size={20} color={APP_TEXT} />
             </Pressable>
             <Pressable
               style={styles.actionIcon}
-              onPress={() => setFeedback('Add friends from the Suggested for you section below.')}
+              onPress={() => router.push('/friends/add')}
             >
               <MaterialIcons name="person-add-alt-1" size={20} color={APP_TEXT} />
             </Pressable>
@@ -173,7 +119,10 @@ export default function MessagesScreen() {
         </View>
 
         <View style={styles.quickRow}>
-          <Pressable style={styles.primaryCta} onPress={() => openThread()}>
+          <Pressable
+            style={styles.primaryCta}
+            onPress={() => router.push('/messages/new')}
+          >
             <MaterialIcons name="chat-bubble-outline" size={18} color={WHITE} />
             <Text style={styles.primaryCtaText}>New message</Text>
           </Pressable>
@@ -194,8 +143,6 @@ export default function MessagesScreen() {
             </View>
           </View>
         </View>
-
-        {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Inbox</Text>
@@ -269,64 +216,6 @@ export default function MessagesScreen() {
                 <Text style={styles.emptyTitle}>No conversations match that search.</Text>
                 <Text style={styles.emptyBody}>
                   Try another username or start a new thread from the button above.
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Suggested for you</Text>
-          <View style={styles.listCard}>
-            {visibleSuggestions.map((friend) => {
-              const accentColor = getIdentityColor(friend.username);
-
-              return (
-                <View key={friend.id} style={styles.suggestionRow}>
-                  <View style={styles.rowLeft}>
-                    <View
-                      style={[
-                        styles.avatarCircleSmall,
-                        { backgroundColor: accentColor },
-                      ]}
-                    >
-                      <Text style={styles.avatarCircleTextSmall}>
-                        {getInitials(friend.username)}
-                      </Text>
-                      {friend.isOnline ? <View style={styles.onlineDotSmall} /> : null}
-                    </View>
-                    <View style={styles.rowCopy}>
-                      <Text style={styles.rowName}>@{friend.username}</Text>
-                      <Text style={styles.rowMeta}>
-                        {friend.sport} · Level {friend.level}
-                      </Text>
-                      <Text style={styles.suggestionStatus} numberOfLines={1}>
-                        {friend.status}
-                      </Text>
-                    </View>
-                  </View>
-                  <Pressable
-                    style={styles.addButton}
-                    disabled={isSaving}
-                    onPress={async () => {
-                      await handleAddFriend(friend);
-                      router.push({
-                        pathname: '/messages/[friendId]',
-                        params: { friendId: friend.id },
-                      });
-                    }}
-                  >
-                    <Text style={styles.addButtonText}>Add</Text>
-                  </Pressable>
-                </View>
-              );
-            })}
-
-            {!visibleSuggestions.length ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>No suggestions left to add.</Text>
-                <Text style={styles.emptyBody}>
-                  Your inbox is ready for more threads whenever new players show up.
                 </Text>
               </View>
             ) : null}
@@ -458,11 +347,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
-  feedback: {
-    color: PURPLE,
-    fontSize: 13,
-    fontWeight: '700',
-  },
   section: {
     gap: 10,
   },
@@ -480,16 +364,6 @@ const styles = StyleSheet.create({
     borderColor: APP_BORDER,
   },
   row: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: APP_BORDER,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  suggestionRow: {
     paddingHorizontal: 18,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -565,22 +439,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  avatarCircleSmall: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
   avatarCircleText: {
     color: WHITE,
     fontSize: 20,
-    fontWeight: '800',
-  },
-  avatarCircleTextSmall: {
-    color: WHITE,
-    fontSize: 16,
     fontWeight: '800',
   },
   onlineDot: {
@@ -593,36 +454,6 @@ const styles = StyleSheet.create({
     backgroundColor: SUCCESS,
     borderWidth: 3,
     borderColor: WHITE,
-  },
-  onlineDotSmall: {
-    position: 'absolute',
-    right: -1,
-    bottom: -1,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: SUCCESS,
-    borderWidth: 2,
-    borderColor: WHITE,
-  },
-  addButton: {
-    minWidth: 76,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: PURPLE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  addButtonText: {
-    color: WHITE,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  suggestionStatus: {
-    color: APP_TEXT_MUTED,
-    fontSize: 13,
-    lineHeight: 18,
   },
   emptyState: {
     paddingHorizontal: 18,
