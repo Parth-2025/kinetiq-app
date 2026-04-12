@@ -104,7 +104,9 @@ export default function ShotBreakdownScreen() {
     );
   }
 
-  const phaseKeys = getPhaseKeys().filter((key) => session.analysis.phases[key]);
+  const phaseKeys = getPhaseKeys().filter(
+    (key) => session.analysis.phases[key],
+  );
   const overallScore = Math.round(session.analysis.overall_score);
   const priorityPhaseKey = isAnalysisPhaseKey(session.analysis.priority)
     ? session.analysis.priority
@@ -151,7 +153,9 @@ export default function ShotBreakdownScreen() {
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>FOCUS AREA</Text>
-          <Text style={styles.summaryValue}>{getPhaseLabel(priorityPhaseKey)}</Text>
+          <Text style={styles.summaryValue}>
+            {getPhaseLabel(priorityPhaseKey)}
+          </Text>
         </View>
 
         <View style={styles.phaseList}>
@@ -179,7 +183,9 @@ export default function ShotBreakdownScreen() {
                     <Text style={styles.badgeText}>{index + 1}</Text>
                   </View>
                   <View>
-                    <Text style={styles.phaseName}>{getPhaseLabel(phaseKey)}</Text>
+                    <Text style={styles.phaseName}>
+                      {getPhaseLabel(phaseKey)}
+                    </Text>
                     <Text style={styles.phaseStatus}>
                       {phase.status.replace(/_/g, " ")}
                     </Text>
@@ -198,7 +204,9 @@ export default function ShotBreakdownScreen() {
           <Text style={styles.overallLabel}>OVERALL SCORE</Text>
           <View style={styles.overallRow}>
             <Text style={styles.overallScore}>{overallScore}</Text>
-            <Text style={styles.overallGrade}>{scoreToGrade(overallScore)}</Text>
+            <Text style={styles.overallGrade}>
+              {scoreToGrade(overallScore)}
+            </Text>
           </View>
         </View>
 
@@ -261,8 +269,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   poseGif: {
-    width: "100%",
-    height: 220,
+    width: "150%",
+    height: 330,
     backgroundColor: "#111",
   },
   placeholderContent: {
@@ -391,7 +399,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.2)",
   },
-  finishText: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: 2 },
+  finishText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 2,
+  },
   centerState: {
     flex: 1,
     alignItems: "center",
