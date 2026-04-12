@@ -16,12 +16,14 @@ export default function RootLayout() {
           {/* Public screen — no auth guard */}
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding/username" options={{ headerShown: false }} />
 
           {/* Protected screens wrapped in the auth guard */}
           <Stack.Screen
             name="(tabs)"
             options={{ headerShown: false }}
           />
+          <Stack.Screen name="messages/[friendId]" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="sports" options={{ headerShown: false }} />
           <Stack.Screen name="shot-breakdown" options={{ headerShown: false }} />

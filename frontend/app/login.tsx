@@ -43,6 +43,9 @@ export default function LoginScreen() {
         />
 
         <Text style={styles.tagline}>Analyze. Align. Achieve.</Text>
+        <Text style={styles.signupHint}>
+          New accounts pick a public username before entering the app.
+        </Text>
       </View>
 
       {/* ── Actions ── */}
@@ -139,6 +142,13 @@ const styles = StyleSheet.create({
     color: AUTH_SUBTLE,
     textAlign: "center",
     lineHeight: 22,
+  },
+  signupHint: {
+    fontSize: 13,
+    color: AUTH_MUTED,
+    textAlign: "center",
+    lineHeight: 18,
+    maxWidth: 260,
   },
 
   // Actions

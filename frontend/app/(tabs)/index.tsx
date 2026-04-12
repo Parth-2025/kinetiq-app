@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useDatabaseLiveValue, useDatabaseValue } from '@/hooks/use-database';
 import { useProfileCustomization } from '@/hooks/use-profile-customization';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const SPORT_EMOJI: Record<string, string> = {
   Basketball: '🏀',
@@ -41,6 +42,7 @@ export default function HomeScreen() {
   const { user, logout } = useAuth();
   const userId = user?.sub ? sanitizeUid(user.sub) : 'anonymous';
   const { customization } = useProfileCustomization(user?.sub);
+  const { profile } = useUserProfile(user?.sub);
 
   const { value: videos }   = useDatabaseValue('stats/number_of_videos');
   const { value: level }    = useDatabaseValue('stats/level');
@@ -55,9 +57,7 @@ export default function HomeScreen() {
   const equippedAvatar  = getAvatarById(customization.equippedAvatarId);
   const equippedBanner  = getBannerById(customization.equippedBannerId);
 
-  const username = user?.name
-    ? `@${user.name.replace(/\s+/g, '').toLowerCase()}`
-    : '@you';
+  const username = profile?.username ? `@${profile.username}` : '@you';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -76,7 +76,9 @@ export default function HomeScreen() {
             </View>
             <View style={styles.profileMeta}>
               <View>
-                <Text style={styles.profileName}>{user?.name ?? 'Rim Ready Player'}</Text>
+                <Text style={styles.profileName}>
+                  {profile?.displayName ?? user?.name ?? 'Rim Ready Player'}
+                </Text>
                 <Text style={styles.profileCustomization}>
                   {equippedAvatar.name} avatar • {equippedBanner.name} banner
                 </Text>

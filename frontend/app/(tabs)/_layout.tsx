@@ -4,15 +4,19 @@ import React from 'react';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/context/auth-context';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const PURPLE = '#6C47FF';
 const GRAY = '#8E8E93';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
+  const { hasUsername, isLoading: isProfileLoading } = useUserProfile(user?.sub);
 
   if (isLoading) return null;
   if (!user) return <Redirect href="/login" />;
+  if (isProfileLoading) return null;
+  if (!hasUsername) return <Redirect href="/onboarding/username" />;
 
   return (
     <Tabs
