@@ -26,6 +26,8 @@ import { useAuth } from "@/context/auth-context";
 import { useDatabaseLiveValue } from "@/hooks/use-database";
 import {
   BASKETBALL_LEADERBOARD_KEY,
+  getSampleLeaderboardStats,
+  SAMPLE_LEADERBOARD_PLAYERS,
   seedSampleBasketballLeaderboard,
 } from "@/services/leaderboard";
 import type { StoredLeaderboardSportStats } from "@/types/analysis";
@@ -171,8 +173,8 @@ export default function LeaderboardScreen() {
   }, [isLoading, users]);
 
   const entries = useMemo(
-    () =>
-      Object.entries(users ?? {})
+    () => {
+      const realEntries = Object.entries(users ?? {})
         .map(([userId, node]) => {
           const stats = node?.leaderboards?.[BASKETBALL_LEADERBOARD_KEY];
 
@@ -192,12 +194,32 @@ export default function LeaderboardScreen() {
             isCurrentUser: userId === currentUserId,
           } satisfies LeaderboardEntry;
         })
-        .filter((entry): entry is LeaderboardEntry => Boolean(entry))
+        .filter((entry): entry is LeaderboardEntry => Boolean(entry));
+
+      const occupiedUserIds = new Set(realEntries.map((entry) => entry.userId));
+      const occupiedUsernames = new Set(realEntries.map((entry) => entry.username));
+
+      const sampleEntries = SAMPLE_LEADERBOARD_PLAYERS
+        .filter(
+          (player) =>
+            !occupiedUserIds.has(player.id) && !occupiedUsernames.has(player.username),
+        )
+        .map((player) => ({
+          userId: player.id,
+          username: player.username,
+          displayName: player.displayName,
+          stats: getSampleLeaderboardStats(`${player.id}:${player.username}`),
+          rank: 0,
+          isCurrentUser: false,
+        }) satisfies LeaderboardEntry);
+
+      return [...realEntries, ...sampleEntries]
         .sort((a, b) => compareEntries(a, b, activeTab))
         .map((entry, index) => ({
           ...entry,
           rank: index + 1,
-        })),
+        }));
+    },
     [activeTab, currentUserId, users],
   );
 

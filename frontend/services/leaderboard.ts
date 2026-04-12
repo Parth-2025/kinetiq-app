@@ -21,6 +21,22 @@ export interface LeaderboardSeedUser {
   leaderboards?: Record<string, LeaderboardSportStats | undefined>;
 }
 
+export interface SampleLeaderboardPlayer {
+  id: string;
+  username: string;
+  displayName: string;
+}
+
+export const SAMPLE_LEADERBOARD_PLAYERS: SampleLeaderboardPlayer[] = [
+  { id: "hoops_legend", username: "hoops_legend", displayName: "Hoops Legend" },
+  { id: "crossover_pro", username: "crossover_pro", displayName: "Crossover Pro" },
+  { id: "slam_dunk_21", username: "slam_dunk_21", displayName: "Slam Dunk 21" },
+  { id: "fade_away", username: "fade_away", displayName: "Fade Away" },
+  { id: "ankle_breaker", username: "ankle_breaker", displayName: "Ankle Breaker" },
+  { id: "three_specialist", username: "three_specialist", displayName: "Three Specialist" },
+  { id: "rim_protector", username: "rim_protector", displayName: "Rim Protector" },
+];
+
 export function getSportLeaderboardPath(userId: string, sport = BASKETBALL_LEADERBOARD_KEY) {
   return `users/${userId}/leaderboards/${sport}`;
 }
@@ -94,6 +110,10 @@ function buildSampleLeaderboardStats(seed: string): LeaderboardSportStats {
     latest_score: latestScore,
     updatedAt: new Date(Date.UTC(2026, month, day, 15, 0, 0)).toISOString(),
   };
+}
+
+export function getSampleLeaderboardStats(seed: string) {
+  return buildSampleLeaderboardStats(seed);
 }
 
 export async function seedSampleBasketballLeaderboard(params: {
