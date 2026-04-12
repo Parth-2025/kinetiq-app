@@ -335,6 +335,7 @@ def generate_pose_gif(
     angles_list: List[Optional[Dict]],
     max_frames: int = 30,
     size: Tuple[int, int] = (360, 360),
+    frame_duration_ms: int = 160,
 ) -> str:
     valid = [(f, a) for f, a in zip(frames, angles_list) if f is not None and a is not None]
     if not valid:
@@ -362,7 +363,7 @@ def generate_pose_gif(
         save_all=True,
         append_images=pil_frames[1:],
         loop=0,
-        duration=80,
+        duration=frame_duration_ms,
         optimize=True,
     )
     return base64.b64encode(buf.getvalue()).decode("utf-8")

@@ -31,8 +31,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Rim Ready to access your videos so you can analyze your shooting form.",
-          "cameraPermission": false,
-          "microphonePermission": false
+          "cameraPermission": "Allow Rim Ready to record a shot video for form analysis.",
+          "microphonePermission": "Allow Rim Ready to record audio with your shot videos."
         }
       ],
       [

@@ -43,9 +43,6 @@ export default function LoginScreen() {
         />
 
         <Text style={styles.tagline}>Analyze. Align. Achieve.</Text>
-        <Text style={styles.signupHint}>
-          New accounts pick a public username before entering the app.
-        </Text>
       </View>
 
       {/* ── Actions ── */}

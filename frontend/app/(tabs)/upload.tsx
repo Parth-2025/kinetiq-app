@@ -2,6 +2,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useState } from "react";
+import type { ComponentProps } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -56,6 +57,19 @@ function showError(message: string) {
   Alert.alert("Upload failed", message);
 }
 
+type VideoSource = "camera" | "library";
+
+type SourceAction = {
+  key: VideoSource;
+  icon: ComponentProps<typeof MaterialIcons>["name"];
+  label: string;
+};
+
+const SOURCE_ACTIONS: SourceAction[] = [
+  { key: "camera", icon: "videocam", label: "Record Video" },
+  { key: "library", icon: "upload", label: "Choose File" },
+];
+
 function BasketballUpload() {
   const { user } = useAuth();
   const userId = formatUserId(user?.sub);
@@ -67,36 +81,19 @@ function BasketballUpload() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
-  const handleUpload = async () => {
-    setStatusMessage(null);
-
-    const permission =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permission.granted) {
-      showError("Media library access is required to pick a shot video.");
-      return;
-    }
-
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["videos"],
-      quality: 1,
-      allowsEditing: false,
-      selectionLimit: 1,
-    });
-
-    if (pickerResult.canceled) {
-      return;
-    }
-
-    const asset = pickerResult.assets[0];
-
+  const submitAsset = async (
+    asset: ImagePicker.ImagePickerAsset,
+    source: VideoSource,
+  ) => {
     if (!asset || asset.type !== "video") {
       showError("Please choose a video file to analyze.");
       return;
     }
 
-    setSelectedFileName(asset.fileName ?? "Selected shot video");
+    const fallbackLabel =
+      source === "camera" ? "Recorded shot video" : "Selected shot video";
+
+    setSelectedFileName(asset.fileName ?? fallbackLabel);
     setIsSubmitting(true);
 
     try {
@@ -126,6 +123,53 @@ function BasketballUpload() {
     }
   };
 
+  const handleUpload = async (source: VideoSource) => {
+    setStatusMessage(null);
+
+    if (source === "camera") {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!permission.granted) {
+        showError("Camera access is required to record a shot video.");
+        return;
+      }
+
+      const cameraResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["videos"],
+        quality: 1,
+        allowsEditing: false,
+        videoMaxDuration: 15,
+      });
+
+      if (cameraResult.canceled) {
+        return;
+      }
+
+      await submitAsset(cameraResult.assets[0], source);
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      showError("Media library access is required to pick a shot video.");
+      return;
+    }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      quality: 1,
+      allowsEditing: false,
+      selectionLimit: 1,
+    });
+
+    if (pickerResult.canceled) {
+      return;
+    }
+
+    await submitAsset(pickerResult.assets[0], source);
+  };
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -143,24 +187,33 @@ function BasketballUpload() {
           </View>
           <Text style={styles.chooseTitle}>Choose video</Text>
           <Text style={styles.chooseSub}>
-            Upload a real shot clip and get backend-generated analysis
+            Record a new shot or upload one from your library for backend analysis
           </Text>
 
-          <TouchableOpacity
-            style={[styles.selectBtn, isSubmitting && styles.selectBtnDisabled]}
-            activeOpacity={0.85}
-            onPress={handleUpload}
-            disabled={isSubmitting}
-          >
-            <MaterialIcons
-              name={isSubmitting ? "sync" : "upload"}
-              size={20}
-              color={WHITE}
-            />
-            <Text style={styles.selectBtnText}>
-              {isSubmitting ? "Analyzing..." : "Select File"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            {SOURCE_ACTIONS.map((action) => (
+              <TouchableOpacity
+                key={action.key}
+                style={[
+                  styles.selectBtn,
+                  styles.actionButton,
+                  isSubmitting && styles.selectBtnDisabled,
+                ]}
+                activeOpacity={0.85}
+                onPress={() => handleUpload(action.key)}
+                disabled={isSubmitting}
+              >
+                <MaterialIcons
+                  name={isSubmitting ? "sync" : action.icon}
+                  size={20}
+                  color={WHITE}
+                />
+                <Text style={styles.selectBtnText}>
+                  {isSubmitting ? "Analyzing..." : action.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {selectedFileName ? (
             <Text style={styles.fileName}>{selectedFileName}</Text>
@@ -291,12 +344,20 @@ const styles = StyleSheet.create({
   selectBtn: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     backgroundColor: PURPLE,
     paddingVertical: 15,
     paddingHorizontal: 36,
     borderRadius: 50,
     marginTop: 8,
+  },
+  actionRow: {
+    width: "100%",
+    gap: 12,
+  },
+  actionButton: {
+    width: "100%",
   },
   selectBtnDisabled: {
     opacity: 0.7,
