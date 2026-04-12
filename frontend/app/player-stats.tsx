@@ -10,29 +10,66 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/context/auth-context';
+import { useDatabaseLiveValue } from '@/hooks/use-database';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { useUserStats } from '@/hooks/use-user-stats';
+import { scoreToGrade } from '@/utils/analysis';
+import { formatUserId } from '@/utils/user';
+import type { AnalysisSession } from '@/types/analysis';
 
 const ORANGE  = '#E85D04';
 const BG      = '#181818';
 const ROW_BG  = '#242424';
 const SEP     = '#2E2E2E';
 
-const RECENT_SESSIONS = [
-  { date: 'Apr 11, 2026', grade: 'B+', score: 87 },
-  { date: 'Apr 9, 2026',  grade: 'A-', score: 92 },
-  { date: 'Apr 7, 2026',  grade: 'B',  score: 84 },
-  { date: 'Apr 5, 2026',  grade: 'B+', score: 89 },
-];
+function formatMemberSince(value: string | null | undefined) {
+  if (!value) {
+    return 'Member since recently';
+  }
 
-const SHOTS_ANALYZED = 47;
-const AVG_SCORE      = 87.6;
-const BEST_SCORE     = 95;
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Member since recently';
+  }
+
+  return `Member since ${date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })}`;
+}
 
 export default function PlayerStatsScreen() {
   const { user } = useAuth();
+  const userId = formatUserId(user?.sub);
+  const { profile } = useUserProfile(user?.sub);
+  const { stats } = useUserStats(user?.sub);
+  const { value: sessionMap } = useDatabaseLiveValue<Record<string, AnalysisSession>>(
+    `users/${userId}/analysisSessions`,
+  );
 
   const displayName = user?.name
     ? user.name.toUpperCase()
     : 'PLAYER';
+  const recentSessions = Object.values(sessionMap ?? {})
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+    .slice(0, 4)
+    .map((session) => ({
+      id: session.id,
+      date: new Date(session.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      grade: scoreToGrade(Math.round(session.analysis.overall_score)),
+      score: Math.round(session.analysis.overall_score),
+    }));
+  const shotsAnalyzed = stats?.shotsAnalyzed ?? 0;
+  const avgScore = stats?.avgScore?.toFixed(1) ?? '0.0';
+  const bestScore = stats?.bestScore ?? 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,7 +85,7 @@ export default function PlayerStatsScreen() {
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.playerName}>{displayName}</Text>
-            <Text style={styles.memberSince}>Member since Jan 2026</Text>
+            <Text style={styles.memberSince}>{formatMemberSince(profile?.createdAt)}</Text>
           </View>
         </View>
 
@@ -56,17 +93,17 @@ export default function PlayerStatsScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <MaterialIcons name="adjust" size={22} color={ORANGE} />
-            <Text style={styles.statValue}>{SHOTS_ANALYZED}</Text>
+            <Text style={styles.statValue}>{shotsAnalyzed}</Text>
             <Text style={styles.statLabel}>{'SHOTS\nANALYZED'}</Text>
           </View>
           <View style={[styles.statBox, styles.statBoxBorder]}>
             <MaterialIcons name="trending-up" size={22} color={ORANGE} />
-            <Text style={styles.statValue}>{AVG_SCORE}</Text>
+            <Text style={styles.statValue}>{avgScore}</Text>
             <Text style={styles.statLabel}>AVG SCORE</Text>
           </View>
           <View style={[styles.statBox, styles.statBoxBorder]}>
             <MaterialIcons name="emoji-events" size={22} color={ORANGE} />
-            <Text style={styles.statValue}>{BEST_SCORE}</Text>
+            <Text style={styles.statValue}>{bestScore}</Text>
             <Text style={styles.statLabel}>BEST SCORE</Text>
           </View>
         </View>
@@ -78,18 +115,29 @@ export default function PlayerStatsScreen() {
         </View>
 
         <View style={styles.sessionList}>
-          {RECENT_SESSIONS.map((s, i) => (
-            <View
-              key={i}
-              style={[styles.sessionRow, i < RECENT_SESSIONS.length - 1 && styles.sessionRowBorder]}
-            >
-              <View>
-                <Text style={styles.sessionDate}>{s.date}</Text>
-                <Text style={styles.sessionGrade}>{s.grade}</Text>
+          {recentSessions.length ? (
+            recentSessions.map((session, index) => (
+              <View
+                key={session.id}
+                style={[
+                  styles.sessionRow,
+                  index < recentSessions.length - 1 && styles.sessionRowBorder,
+                ]}
+              >
+                <View>
+                  <Text style={styles.sessionDate}>{session.date}</Text>
+                  <Text style={styles.sessionGrade}>{session.grade}</Text>
+                </View>
+                <Text style={styles.sessionScore}>{session.score}</Text>
               </View>
-              <Text style={styles.sessionScore}>{s.score}</Text>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                Upload a shot video to start building your stats.
+              </Text>
             </View>
-          ))}
+          )}
         </View>
 
         {/* ── New Session button ── */}
@@ -231,6 +279,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: -0.5,
+  },
+  emptyState: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#8E8E93',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 
   // New Session

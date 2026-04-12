@@ -25,8 +25,8 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useSocialInbox } from '@/hooks/use-social-inbox';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { type SocialFriend, type SocialInboxState } from '@/types/social';
-import { getIdentityColor, getInitials, upsertFriend } from '@/utils/social';
+import { type SocialFriend } from '@/types/social';
+import { addFriendToInbox, getIdentityColor, getInitials } from '@/utils/social';
 
 export default function AddFriendsScreen() {
   const { user } = useAuth();
@@ -54,24 +54,7 @@ export default function AddFriendsScreen() {
 
   async function handleAddFriend(friend: SocialFriend) {
     setFeedback(null);
-    const withFriend = upsertFriend(inbox, friend);
-    const hasThread = withFriend.threads.some((thread) => thread.participantId === friend.id);
-
-    const nextInbox: SocialInboxState = hasThread
-      ? withFriend
-      : {
-          ...withFriend,
-          threads: [
-            {
-              id: `thread-${friend.id}`,
-              participantId: friend.id,
-              updatedAt: new Date().toISOString(),
-              unreadCount: 0,
-              messages: [],
-            },
-            ...withFriend.threads,
-          ],
-        };
+    const nextInbox = addFriendToInbox(inbox, friend);
 
     try {
       await saveInbox(nextInbox);

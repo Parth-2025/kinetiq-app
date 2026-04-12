@@ -3,6 +3,11 @@ import { push, ref, set } from "firebase/database";
 
 import { db } from "@/config/firebase";
 import { updateSportLeaderboardStats } from "@/services/leaderboard";
+import {
+  addProfileCustomizationPoints,
+  VIDEO_UPLOAD_POINTS_REWARD,
+} from "@/services/profile-customization";
+import { updateUserStats } from "@/services/user-stats";
 import type { AnalysisResult, AnalysisSession } from "@/types/analysis";
 
 export async function saveAnalysisSession(params: {
@@ -37,10 +42,20 @@ export async function saveAnalysisSession(params: {
 
   await set(sessionRef, session);
   await set(ref(db, `users/${userId}/analysis/activeSessionId`), session.id);
-  await updateSportLeaderboardStats({
-    userId,
-    score: analysis.overall_score,
-  });
+  await Promise.all([
+    updateSportLeaderboardStats({
+      userId,
+      score: analysis.overall_score,
+    }),
+    updateUserStats({
+      userId,
+      score: analysis.overall_score,
+    }),
+    addProfileCustomizationPoints({
+      userId,
+      points: VIDEO_UPLOAD_POINTS_REWARD,
+    }),
+  ]);
 
   return session;
 }

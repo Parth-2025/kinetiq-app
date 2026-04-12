@@ -20,9 +20,11 @@ import {
   PURPLE,
 } from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
-import { useDatabaseLiveValue, useDatabaseValue } from '@/hooks/use-database';
+import { useDatabaseLiveValue } from '@/hooks/use-database';
 import { useProfileCustomization } from '@/hooks/use-profile-customization';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useUserStats } from '@/hooks/use-user-stats';
+import { formatUserId } from '@/utils/user';
 
 const SPORT_EMOJI: Record<string, string> = {
   Basketball: '🏀',
@@ -34,24 +36,20 @@ const SPORT_EMOJI: Record<string, string> = {
   Swimming:   '🏊',
 };
 
-function sanitizeUid(sub: string) {
-  return sub.replace(/[.#$[\]|]/g, '_');
-}
-
 export default function HomeScreen() {
   const { user, logout } = useAuth();
-  const userId = user?.sub ? sanitizeUid(user.sub) : 'anonymous';
+  const userId = formatUserId(user?.sub);
   const { customization } = useProfileCustomization(user?.sub);
   const { profile } = useUserProfile(user?.sub);
-
-  const { value: videos }   = useDatabaseValue('stats/number_of_videos');
-  const { value: level }    = useDatabaseValue('stats/level');
-  const { value: progress } = useDatabaseValue('stats/progress');
+  const { stats } = useUserStats(user?.sub);
   const { value: activeSport } = useDatabaseLiveValue<string>(`users/${userId}/sports/active`);
 
-  const displayVideos   = videos ?? 0;
-  const displayLevel    = level ?? 1;
-  const displayProgress = progress ?? 0;
+  const displayVideos = stats?.videosUploaded ?? 0;
+  const displayLevel = stats?.level ?? 0;
+  const displayProgress = stats?.progressPct ?? 0;
+  const displayExp = stats?.exp ?? 0;
+  const displayCurrentLevelExp = stats?.currentLevelExp ?? 0;
+  const displayNextLevelExp = stats?.nextLevelExp ?? 50;
   const displaySport    = activeSport ?? 'Basketball';
   const displayEmoji    = SPORT_EMOJI[displaySport] ?? '🏀';
   const equippedAvatar  = getAvatarById(customization.equippedAvatarId);
@@ -112,7 +110,9 @@ export default function HomeScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${displayProgress}%` }]} />
           </View>
-          <Text style={styles.progressPct}>{displayProgress}%</Text>
+          <Text style={styles.progressPct}>
+            {displayExp - displayCurrentLevelExp}/{displayNextLevelExp - displayCurrentLevelExp} XP • {displayProgress}%
+          </Text>
         </View>
 
         {/* ── Active Sport Card ── */}

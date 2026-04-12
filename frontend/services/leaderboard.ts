@@ -27,18 +27,190 @@ export interface SampleLeaderboardPlayer {
   displayName: string;
 }
 
-export const SAMPLE_LEADERBOARD_PLAYERS: SampleLeaderboardPlayer[] = [
-  { id: "hoops_legend", username: "hoops_legend", displayName: "Hoops Legend" },
-  { id: "crossover_pro", username: "crossover_pro", displayName: "Crossover Pro" },
-  { id: "slam_dunk_21", username: "slam_dunk_21", displayName: "Slam Dunk 21" },
-  { id: "fade_away", username: "fade_away", displayName: "Fade Away" },
-  { id: "ankle_breaker", username: "ankle_breaker", displayName: "Ankle Breaker" },
-  { id: "three_specialist", username: "three_specialist", displayName: "Three Specialist" },
-  { id: "rim_protector", username: "rim_protector", displayName: "Rim Protector" },
+type SampleLeaderboardPlayerWithStats = SampleLeaderboardPlayer & {
+  stats: LeaderboardSportStats;
+};
+
+const SAMPLE_LEADERBOARD_PLAYER_DATA: SampleLeaderboardPlayerWithStats[] = [
+  {
+    id: "hoops_legend",
+    username: "hoops_legend",
+    displayName: "Hoops Legend",
+    stats: {
+      first_score: 80,
+      max_score: 97,
+      most_improved: 17,
+      num_videos: 26,
+      latest_score: 95,
+      updatedAt: "2026-03-18T15:00:00.000Z",
+    },
+  },
+  {
+    id: "crossover_pro",
+    username: "crossover_pro",
+    displayName: "Crossover Pro",
+    stats: {
+      first_score: 78,
+      max_score: 94,
+      most_improved: 16,
+      num_videos: 21,
+      latest_score: 92,
+      updatedAt: "2026-03-22T15:00:00.000Z",
+    },
+  },
+  {
+    id: "slam_dunk_21",
+    username: "slam_dunk_21",
+    displayName: "Slam Dunk 21",
+    stats: {
+      first_score: 76,
+      max_score: 91,
+      most_improved: 15,
+      num_videos: 18,
+      latest_score: 89,
+      updatedAt: "2026-03-25T15:00:00.000Z",
+    },
+  },
+  {
+    id: "fade_away",
+    username: "fade_away",
+    displayName: "Fade Away",
+    stats: {
+      first_score: 79,
+      max_score: 93,
+      most_improved: 14,
+      num_videos: 17,
+      latest_score: 90,
+      updatedAt: "2026-03-29T15:00:00.000Z",
+    },
+  },
+  {
+    id: "ankle_breaker",
+    username: "ankle_breaker",
+    displayName: "Ankle Breaker",
+    stats: {
+      first_score: 74,
+      max_score: 88,
+      most_improved: 14,
+      num_videos: 15,
+      latest_score: 87,
+      updatedAt: "2026-04-01T15:00:00.000Z",
+    },
+  },
+  {
+    id: "three_specialist",
+    username: "three_specialist",
+    displayName: "Three Specialist",
+    stats: {
+      first_score: 77,
+      max_score: 90,
+      most_improved: 13,
+      num_videos: 19,
+      latest_score: 88,
+      updatedAt: "2026-04-04T15:00:00.000Z",
+    },
+  },
+  {
+    id: "rim_protector",
+    username: "rim_protector",
+    displayName: "Rim Protector",
+    stats: {
+      first_score: 75,
+      max_score: 87,
+      most_improved: 12,
+      num_videos: 16,
+      latest_score: 86,
+      updatedAt: "2026-04-07T15:00:00.000Z",
+    },
+  },
 ];
+
+export const SAMPLE_LEADERBOARD_PLAYERS: SampleLeaderboardPlayer[] =
+  SAMPLE_LEADERBOARD_PLAYER_DATA.map(({ id, username, displayName }) => ({
+    id,
+    username,
+    displayName,
+  }));
 
 export function getSportLeaderboardPath(userId: string, sport = BASKETBALL_LEADERBOARD_KEY) {
   return `users/${userId}/leaderboards/${sport}`;
+}
+
+export function normalizeLeaderboardStats(
+  value: Partial<LeaderboardSportStats> | null | undefined,
+): LeaderboardSportStats | null {
+  if (!value) {
+    return null;
+  }
+
+  const firstScore = Math.max(
+    0,
+    typeof value.first_score === "number" ? Math.round(value.first_score) : 0,
+  );
+  const latestScore = Math.max(
+    0,
+    typeof value.latest_score === "number" ? Math.round(value.latest_score) : firstScore,
+  );
+  const maxScore = Math.max(
+    firstScore,
+    latestScore,
+    typeof value.max_score === "number" ? Math.round(value.max_score) : latestScore,
+  );
+  const numVideos = Math.max(
+    0,
+    typeof value.num_videos === "number" ? Math.round(value.num_videos) : 0,
+  );
+
+  return {
+    first_score: firstScore,
+    max_score: maxScore,
+    most_improved: Math.max(0, maxScore - firstScore),
+    num_videos: numVideos,
+    latest_score: latestScore,
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
+  };
+}
+
+export async function sanitizeBasketballLeaderboardStats(params: {
+  users: Record<string, LeaderboardSeedUser>;
+}) {
+  const updates: Record<string, LeaderboardSportStats> = {};
+
+  for (const [userId, node] of Object.entries(params.users)) {
+    const existingStats = node.leaderboards?.[BASKETBALL_LEADERBOARD_KEY];
+
+    if (!existingStats) {
+      continue;
+    }
+
+    const normalizedStats = normalizeLeaderboardStats(existingStats);
+
+    if (!normalizedStats) {
+      continue;
+    }
+
+    const repairedStats = normalizedStats;
+
+    const hasChanged =
+      repairedStats.first_score !== existingStats.first_score ||
+      repairedStats.max_score !== existingStats.max_score ||
+      repairedStats.most_improved !== existingStats.most_improved ||
+      repairedStats.num_videos !== existingStats.num_videos ||
+      repairedStats.latest_score !== existingStats.latest_score;
+
+    if (!hasChanged) {
+      continue;
+    }
+
+    updates[getSportLeaderboardPath(userId)] = repairedStats;
+  }
+
+  if (!Object.keys(updates).length) {
+    return false;
+  }
+
+  await update(ref(db), updates);
+  return true;
 }
 
 export async function updateSportLeaderboardStats(params: {
@@ -68,48 +240,34 @@ export async function updateSportLeaderboardStats(params: {
     typeof existing?.num_videos === "number" ? existing.num_videos : 0,
   ) + 1;
 
-  const stats: LeaderboardSportStats = {
+  const stats = normalizeLeaderboardStats({
     first_score: firstScore,
     max_score: maxScore,
     most_improved: Math.max(0, maxScore - firstScore),
     num_videos: numVideos,
     latest_score: normalizedScore,
     updatedAt: now,
-  };
+  });
+
+  if (!stats) {
+    throw new Error("Unable to normalize leaderboard stats.");
+  }
 
   await set(leaderboardRef, stats);
 
   return stats;
 }
 
-function hashString(value: string) {
-  let hash = 0;
+function buildSampleLeaderboardStats(seed: string): LeaderboardSportStats {
+  const samplePlayer = SAMPLE_LEADERBOARD_PLAYER_DATA.find(
+    (player) => `${player.id}:${player.username}` === seed,
+  );
 
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  if (!samplePlayer) {
+    throw new Error(`Missing sample leaderboard stats for seed "${seed}".`);
   }
 
-  return hash;
-}
-
-function buildSampleLeaderboardStats(seed: string): LeaderboardSportStats {
-  const hash = hashString(seed);
-  const firstScore = 72 + (hash % 15);
-  const improvement = 7 + ((hash >> 4) % 15);
-  const maxScore = Math.min(99, firstScore + improvement);
-  const numVideos = 4 + ((hash >> 8) % 29);
-  const latestScore = Math.max(firstScore, maxScore - ((hash >> 12) % 6));
-  const month = ((hash >> 16) % 9) + 1;
-  const day = ((hash >> 20) % 20) + 1;
-
-  return {
-    first_score: firstScore,
-    max_score: maxScore,
-    most_improved: maxScore - firstScore,
-    num_videos: numVideos,
-    latest_score: latestScore,
-    updatedAt: new Date(Date.UTC(2026, month, day, 15, 0, 0)).toISOString(),
-  };
+  return normalizeLeaderboardStats(samplePlayer.stats) as LeaderboardSportStats;
 }
 
 export function getSampleLeaderboardStats(seed: string) {

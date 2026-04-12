@@ -60,6 +60,29 @@ export function upsertFriend(inbox: SocialInboxState, friend: SocialFriend) {
   };
 }
 
+export function addFriendToInbox(inbox: SocialInboxState, friend: SocialFriend) {
+  const withFriend = upsertFriend(inbox, friend);
+  const hasThread = withFriend.threads.some((thread) => thread.participantId === friend.id);
+
+  if (hasThread) {
+    return withFriend;
+  }
+
+  return {
+    ...withFriend,
+    threads: [
+      {
+        id: `thread-${friend.id}`,
+        participantId: friend.id,
+        updatedAt: new Date().toISOString(),
+        unreadCount: 0,
+        messages: [],
+      },
+      ...withFriend.threads,
+    ],
+  };
+}
+
 export function appendMessageToInbox({
   inbox,
   friendId,
@@ -107,4 +130,3 @@ export function appendMessageToInbox({
     message,
   };
 }
-
