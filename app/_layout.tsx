@@ -22,6 +22,10 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="sports" options={{ headerShown: false }} />
+          <Stack.Screen name="shot-breakdown" options={{ headerShown: false }} />
+          <Stack.Screen name="phase-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="player-stats" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

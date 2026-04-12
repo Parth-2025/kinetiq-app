@@ -1,66 +1,96 @@
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
-  Image,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAuth } from '@/context/auth-context';
+import {
+  AUTH_BG,
+  AUTH_CARD,
+  AUTH_MUTED,
+  AUTH_SUBTLE,
+  AUTH_TEXT,
+  PURPLE,
+  TEAL,
+} from "@/constants/colors";
+import { useAuth } from "@/context/auth-context";
 
 export default function LoginScreen() {
   const { user, isLoading, login, signUp } = useAuth();
   const router = useRouter();
 
-  // Redirect once authenticated
   useEffect(() => {
-    if (user) router.replace('/(tabs)');
+    if (user) router.replace("/(tabs)");
   }, [user, router]);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* ── Brand ── */}
       <View style={styles.brandSection}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={styles.appName}>Rim Ready</Text>
-        <Text style={styles.tagline}>
-          Your go-to destination for wheel & rim services
-        </Text>
+        <Text style={styles.appName}>KinetiQ</Text>
+
+        <Image
+          source={require("@/assets/images/sky-blue-logo.png")}
+          style={styles.icon}
+          contentFit="contain"
+        />
+
+        <Text style={styles.tagline}>Analyze. Align. Achieve.</Text>
       </View>
 
       {/* ── Actions ── */}
       <View style={styles.actionsSection}>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#0a7ea4" style={styles.loader} />
+          <ActivityIndicator size="large" color={TEAL} style={styles.loader} />
         ) : (
           <>
             <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.btn,
+                pressed && styles.btnPressed,
+              ]}
               onPress={login}
               accessibilityRole="button"
               accessibilityLabel="Log in to your account"
             >
-              <Text style={styles.btnPrimaryText}>Log In</Text>
+              <Text style={styles.btnSecondaryText}>Log In</Text>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnSecondary, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.btn,
+                pressed && styles.btnPressed,
+              ]}
               onPress={signUp}
               accessibilityRole="button"
               accessibilityLabel="Create a new account"
             >
               <Text style={styles.btnSecondaryText}>Create Account</Text>
+            </Pressable>
+
+            <View style={styles.orRow}>
+              <View style={styles.divider} />
+              <Text style={styles.orText}>or</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btn,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={login}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+            >
+              <Text style={styles.googleG}>G</Text>
+              <Text style={styles.googleText}>Continue with Google</Text>
             </Pressable>
           </>
         )}
@@ -68,7 +98,9 @@ export default function LoginScreen() {
 
       {/* ── Footer ── */}
       <Text style={styles.footer}>
-        By continuing, you agree to our Terms of Service and Privacy Policy.
+        By continuing, you agree to our{" "}
+        <Text style={styles.footerLink}>Terms of Service</Text> and{" "}
+        <Text style={styles.footerLink}>Privacy Policy</Text>.
       </Text>
     </SafeAreaView>
   );
@@ -77,98 +109,107 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 32,
-    justifyContent: 'space-between',
-    paddingBottom: 32,
+    backgroundColor: AUTH_BG,
+    paddingHorizontal: 28,
+    justifyContent: "space-between",
+    paddingBottom: 28,
   },
 
   // Brand
   brandSection: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 24,
-    backgroundColor: '#E6F4FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0a7ea4',
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 6 },
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
   },
   appName: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#11181C',
+    fontWeight: "800",
+    color: AUTH_TEXT,
     letterSpacing: -0.5,
+  },
+  icon: {
+    width: 240,
+    height: 240,
+    marginLeft: 35,
   },
   tagline: {
     fontSize: 15,
-    color: '#687076',
-    textAlign: 'center',
+    color: AUTH_SUBTLE,
+    textAlign: "center",
     lineHeight: 22,
-    maxWidth: 260,
   },
 
   // Actions
   actionsSection: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   loader: {
     marginVertical: 24,
   },
   btn: {
-    height: 52,
+    height: 54,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: AUTH_CARD,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   btnPressed: {
-    opacity: 0.8,
+    opacity: 0.75,
     transform: [{ scale: 0.98 }],
   },
-  btnPrimary: {
-    backgroundColor: '#0a7ea4',
-  },
   btnPrimaryText: {
-    color: '#fff',
+    color: PURPLE,
     fontSize: 16,
-    fontWeight: '600',
-  },
-  btnSecondary: {
-    backgroundColor: '#F2F8FB',
-    borderWidth: 1.5,
-    borderColor: '#0a7ea4',
+    fontWeight: "700",
   },
   btnSecondaryText: {
-    color: '#0a7ea4',
+    color: AUTH_TEXT,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "500",
+  },
+
+  // Or divider
+  orRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 2,
+  },
+  divider: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  orText: {
+    color: AUTH_MUTED,
+    fontSize: 13,
+  },
+
+  // Google
+  googleG: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: AUTH_TEXT,
+  },
+  googleText: {
+    color: AUTH_TEXT,
+    fontSize: 16,
+    fontWeight: "600",
   },
 
   // Footer
   footer: {
     fontSize: 12,
-    color: '#9BA1A6',
-    textAlign: 'center',
+    color: AUTH_MUTED,
+    textAlign: "center",
     lineHeight: 18,
+  },
+  footerLink: {
+    color: AUTH_SUBTLE,
+    textDecorationLine: "underline",
   },
 });
