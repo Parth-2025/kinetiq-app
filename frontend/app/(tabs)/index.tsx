@@ -1,8 +1,13 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  AvatarArtwork,
+  BannerArtwork,
+  getAvatarById,
+  getBannerById,
+} from '@/components/profile-cosmetics';
 import {
   DANGER,
   HOME_BG,
@@ -13,6 +18,7 @@ import {
 } from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
 import { useDatabaseLiveValue, useDatabaseValue } from '@/hooks/use-database';
+import { useProfileCustomization } from '@/hooks/use-profile-customization';
 
 const SPORT_EMOJI: Record<string, string> = {
   Basketball: '🏀',
@@ -31,6 +37,7 @@ function sanitizeUid(sub: string) {
 export default function HomeScreen() {
   const { user, logout } = useAuth();
   const userId = user?.sub ? sanitizeUid(user.sub) : 'anonymous';
+  const { customization } = useProfileCustomization(user?.sub);
 
   const { value: videos }   = useDatabaseValue('stats/number_of_videos');
   const { value: level }    = useDatabaseValue('stats/level');
@@ -42,6 +49,8 @@ export default function HomeScreen() {
   const displayProgress = progress ?? 0;
   const displaySport    = activeSport ?? 'Basketball';
   const displayEmoji    = SPORT_EMOJI[displaySport] ?? '🏀';
+  const equippedAvatar  = getAvatarById(customization.equippedAvatarId);
+  const equippedBanner  = getBannerById(customization.equippedBannerId);
 
   const username = user?.name
     ? `@${user.name.replace(/\s+/g, '').toLowerCase()}`
@@ -57,16 +66,26 @@ export default function HomeScreen() {
         {/* ── Profile ── */}
         <View style={styles.profileSection}>
           <Text style={styles.username}>{username}</Text>
-          <View style={styles.avatarWrapper}>
-            {user?.picture ? (
-              <Image source={{ uri: user.picture }} style={styles.avatar} contentFit="cover" />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarInitial}>
-                  {(user?.name ?? 'U')[0].toUpperCase()}
+          <View style={styles.profileCard}>
+            <BannerArtwork banner={equippedBanner} height={132} />
+            <View style={styles.avatarWrapper}>
+              <AvatarArtwork avatar={equippedAvatar} size={92} />
+            </View>
+            <View style={styles.profileMeta}>
+              <View>
+                <Text style={styles.profileName}>{user?.name ?? 'Rim Ready Player'}</Text>
+                <Text style={styles.profileCustomization}>
+                  {equippedAvatar.name} avatar • {equippedBanner.name} banner
                 </Text>
               </View>
-            )}
+              <TouchableOpacity
+                style={styles.shopPill}
+                activeOpacity={0.7}
+                onPress={() => router.push('/shop')}
+              >
+                <Text style={styles.shopPillText}>Open Shop</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -135,7 +154,6 @@ const styles = StyleSheet.create({
 
   // Profile
   profileSection: {
-    alignItems: 'center',
     paddingVertical: 16,
     gap: 16,
   },
@@ -144,31 +162,59 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: HOME_TEXT,
     letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  profileCard: {
+    borderRadius: 28,
+    backgroundColor: HOME_CARD,
+    padding: 12,
+    shadowColor: PURPLE,
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
   },
   avatarWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    padding: 3,
-    backgroundColor: HOME_CARD,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-  },
-  avatarFallback: {
-    backgroundColor: '#DDD6FE',
+    position: 'absolute',
+    left: 24,
+    top: 78,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: HOME_CARD,
+    padding: 4,
   },
-  avatarInitial: {
-    fontSize: 36,
+  profileMeta: {
+    marginTop: 46,
+    paddingHorizontal: 8,
+    paddingBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  profileName: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: HOME_TEXT,
+    letterSpacing: -0.4,
+  },
+  profileCustomization: {
+    marginTop: 4,
+    fontSize: 14,
+    color: HOME_LABEL,
+    fontWeight: '600',
+  },
+  shopPill: {
+    backgroundColor: '#F4F1FF',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  shopPillText: {
+    fontSize: 14,
     fontWeight: '700',
     color: PURPLE,
   },
