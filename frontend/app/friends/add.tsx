@@ -23,22 +23,67 @@ import {
   WHITE,
 } from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
+import { useDatabaseLiveValue } from '@/hooks/use-database';
 import { useSocialInbox } from '@/hooks/use-social-inbox';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { type SocialFriend } from '@/types/social';
 import { addFriendToInbox, getIdentityColor, getInitials } from '@/utils/social';
+import { formatUserId } from '@/utils/user';
+
+type AddableUserNode = {
+  profile?: {
+    username?: string;
+    displayName?: string;
+  };
+};
 
 export default function AddFriendsScreen() {
   const { user } = useAuth();
+  const currentUserId = formatUserId(user?.sub);
   const { profile } = useUserProfile(user?.sub);
   const { inbox, saveInbox, isSaving } = useSocialInbox(user?.sub, profile?.username);
+  const { value: users } = useDatabaseLiveValue<Record<string, AddableUserNode>>('users');
   const [searchText, setSearchText] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  const candidateFriends = useMemo(() => {
+    const existingProfiles = new Map(
+      [...inbox.friends, ...inbox.suggestions].map((friend) => [friend.id, friend] as const),
+    );
+    const friendIds = new Set(inbox.friends.map((friend) => friend.id));
+
+    return Object.entries(users ?? {})
+      .map(([userId, node]) => {
+        if (userId === currentUserId || friendIds.has(userId)) {
+          return null;
+        }
+
+        const username = node.profile?.username?.trim();
+        if (!username) {
+          return null;
+        }
+
+        const existingProfile = existingProfiles.get(userId);
+
+        return {
+          id: userId,
+          username,
+          sport: existingProfile?.sport ?? 'Basketball',
+          level: existingProfile?.level ?? 1,
+          isOnline: existingProfile?.isOnline ?? false,
+          status:
+            existingProfile?.status ??
+            `${node.profile?.displayName?.trim() || username} is ready to connect.`,
+        } satisfies SocialFriend;
+      })
+      .filter((friend): friend is SocialFriend => Boolean(friend))
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }, [currentUserId, inbox.friends, inbox.suggestions, users]);
 
   const visibleSuggestions = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
-    return inbox.suggestions.filter((friend) => {
+    return candidateFriends.filter((friend) => {
       if (!normalizedSearch) {
         return true;
       }
@@ -46,7 +91,7 @@ export default function AddFriendsScreen() {
       const haystack = `${friend.username} ${friend.status} ${friend.sport}`.toLowerCase();
       return haystack.includes(normalizedSearch);
     });
-  }, [inbox.suggestions, searchText]);
+  }, [candidateFriends, searchText]);
 
   if (!user) {
     return <Redirect href="/login" />;

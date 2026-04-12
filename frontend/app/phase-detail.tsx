@@ -23,6 +23,33 @@ const SEP = "#2E2E2E";
 const GREEN = "#3DD9C0";
 const YELLOW = "#E8B840";
 
+const RESOURCE_URL_REPLACEMENTS: Record<string, string> = {
+  "https://www.youtube.com/watch?v=FBaQjmUMmGo":
+    "https://jr.nba.com/video/set-up-your-footwork-before-your-shot/",
+  "https://www.breakthroughbasketball.com/skills/shooting.html":
+    "https://jr.nba.com/video/fundamentals-of-shooting/",
+  "https://www.youtube.com/watch?v=cGbHkeoO4Gc":
+    "https://jr.nba.com/video/practice-the-shooting-proper-form/",
+  "https://www.breakthroughbasketball.com/skills/jump-shot.html":
+    "https://www.breakthroughbasketball.com/fundamentals/shooting-technique.html",
+  "https://www.youtube.com/watch?v=xBRL8oZHHG8":
+    "https://jr.nba.com/dirk-shows-off-perfect-shooting-form/",
+  "https://www.breakthroughbasketball.com/skills/set-point.html":
+    "https://jr.nba.com/video/form-shooting-2-hands/",
+  "https://www.youtube.com/watch?v=KTPOhJJHoHk":
+    "https://jr.nba.com/video/1-step-form-shooting/",
+  "https://www.youtube.com/watch?v=7m0Kq2Dm0nI":
+    "https://www.breakthroughbasketball.com/fundamentals/shooting.html",
+  "https://www.youtube.com/watch?v=5cXn2bRSm3M":
+    "https://jr.nba.com/video/perfect-shot-no-basket/",
+  "https://www.youtube.com/watch?v=aBbhXOJ3PBs":
+    "https://jr.nba.com/jr-nba-at-home-form-shooting/",
+};
+
+function getWorkingResourceUrl(url: string) {
+  return RESOURCE_URL_REPLACEMENTS[url] ?? url;
+}
+
 function ScoreRing({ score, size = 48 }: { score: number; size?: number }) {
   const color = getScoreColor(score);
 
@@ -230,10 +257,10 @@ export default function PhaseDetailScreen() {
             </View>
             {phase.resources.map((resource) => (
               <TouchableOpacity
-                key={resource.url}
+                key={`${resource.label}:${resource.url}`}
                 style={styles.resourceRow}
                 activeOpacity={0.8}
-                onPress={() => Linking.openURL(resource.url)}
+                onPress={() => Linking.openURL(getWorkingResourceUrl(resource.url))}
               >
                 <Text style={styles.resourceLabel}>{resource.label}</Text>
                 <MaterialIcons name="open-in-new" size={18} color="rgba(255,255,255,0.5)" />

@@ -10,24 +10,24 @@ PHASE_IDEALS = {
 
 PHASE_RESOURCES = {
     "ready_position": [
-        {"label": "Proper Shooting Stance", "url": "https://www.youtube.com/watch?v=FBaQjmUMmGo"},
-        {"label": "NBA Shooting Fundamentals", "url": "https://www.breakthroughbasketball.com/skills/shooting.html"},
+        {"label": "Set Up Your Footwork Before Your Shot", "url": "https://jr.nba.com/video/set-up-your-footwork-before-your-shot/"},
+        {"label": "Fundamentals of Shooting", "url": "https://jr.nba.com/video/fundamentals-of-shooting/"},
     ],
     "load": [
-        {"label": "How to Use Your Legs When Shooting", "url": "https://www.youtube.com/watch?v=cGbHkeoO4Gc"},
-        {"label": "Power Generation in the Jump Shot", "url": "https://www.breakthroughbasketball.com/skills/jump-shot.html"},
+        {"label": "Practice the Shooting Proper Form", "url": "https://jr.nba.com/video/practice-the-shooting-proper-form/"},
+        {"label": "Proper Shooting Technique Guide", "url": "https://www.breakthroughbasketball.com/fundamentals/shooting-technique.html"},
     ],
     "set_point": [
-        {"label": "Perfect Set Point Tutorial", "url": "https://www.youtube.com/watch?v=xBRL8oZHHG8"},
-        {"label": "Elbow & Guide Hand Mechanics", "url": "https://www.breakthroughbasketball.com/skills/set-point.html"},
+        {"label": "Dirk Shows Off Perfect Shooting Form", "url": "https://jr.nba.com/dirk-shows-off-perfect-shooting-form/"},
+        {"label": "Form Shooting - 2 Hands", "url": "https://jr.nba.com/video/form-shooting-2-hands/"},
     ],
     "release": [
-        {"label": "Perfect Release Point", "url": "https://www.youtube.com/watch?v=KTPOhJJHoHk"},
-        {"label": "Arm Extension Drills", "url": "https://www.youtube.com/watch?v=7m0Kq2Dm0nI"},
+        {"label": "1-Step Form Shooting", "url": "https://jr.nba.com/video/1-step-form-shooting/"},
+        {"label": "Basketball Shooting Resources", "url": "https://www.breakthroughbasketball.com/fundamentals/shooting.html"},
     ],
     "follow_through": [
-        {"label": "Follow Through Fundamentals", "url": "https://www.youtube.com/watch?v=5cXn2bRSm3M"},
-        {"label": "Wrist Snap Drills", "url": "https://www.youtube.com/watch?v=aBbhXOJ3PBs"},
+        {"label": "Perfect Shot (No Basket)", "url": "https://jr.nba.com/video/perfect-shot-no-basket/"},
+        {"label": "Jr. NBA at Home: Form Shooting", "url": "https://jr.nba.com/jr-nba-at-home-form-shooting/"},
     ],
 }
 
