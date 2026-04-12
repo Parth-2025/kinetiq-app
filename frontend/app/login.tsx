@@ -23,12 +23,23 @@ import {
 import { useAuth } from "@/context/auth-context";
 
 export default function LoginScreen() {
-  const { user, isLoading, login, signUp } = useAuth();
+  const { user, isLoading, authError, login, signUp, clearAuthError } =
+    useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (user) router.replace("/(tabs)");
   }, [user, router]);
+
+  useEffect(() => {
+    if (!authError) {
+      return;
+    }
+
+    return () => {
+      clearAuthError();
+    };
+  }, [authError, clearAuthError]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,6 +58,13 @@ export default function LoginScreen() {
 
       {/* ── Actions ── */}
       <View style={styles.actionsSection}>
+        {authError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Verification required</Text>
+            <Text style={styles.errorText}>{authError}</Text>
+          </View>
+        ) : null}
+
         {isLoading ? (
           <ActivityIndicator size="large" color={TEAL} style={styles.loader} />
         ) : (
@@ -155,6 +173,25 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: 24,
+  },
+  errorCard: {
+    backgroundColor: "rgba(180, 64, 64, 0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 120, 120, 0.28)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 4,
+  },
+  errorTitle: {
+    color: AUTH_TEXT,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  errorText: {
+    color: AUTH_SUBTLE,
+    fontSize: 13,
+    lineHeight: 18,
   },
   btn: {
     height: 54,

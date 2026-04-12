@@ -26,11 +26,14 @@ export interface Auth0User {
 interface AuthContextValue {
   user: Auth0User | null;
   isLoading: boolean;
+  authError: string | null;
   login: () => Promise<void>;
   signUp: () => Promise<void>;
   logout: () => Promise<void>;
+  clearAuthError: () => void;
   /** Called by the /auth/callback page on web to complete the code exchange. */
-  completeWebLogin: (code: string) => Promise<void>;
+  completeWebLogin: (code: string, state?: string | null) => Promise<void>;
+  setAuthErrorMessage: (error: string, description?: string | null) => void;
 }
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
@@ -38,6 +41,7 @@ interface AuthContextValue {
 const STORAGE_USER_KEY = "auth0_user";
 const STORAGE_TOKEN_KEY = "auth0_token";
 export const STORAGE_VERIFIER_KEY = "pkce_verifier";
+export const STORAGE_STATE_KEY = "auth0_state";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -130,6 +134,42 @@ function clearWebSession() {
   localStorage.removeItem(STORAGE_TOKEN_KEY);
 }
 
+function clearWebPkceSession() {
+  if (Platform.OS !== "web") {
+    return;
+  }
+
+  sessionStorage.removeItem(STORAGE_VERIFIER_KEY);
+  sessionStorage.removeItem(STORAGE_STATE_KEY);
+}
+
+function formatAuth0Error(
+  error: string,
+  description?: string | null,
+): string {
+  const normalizedError = error.toLowerCase();
+  const normalizedDescription = (description ?? "").toLowerCase();
+
+  if (
+    normalizedError.includes("captcha") ||
+    normalizedDescription.includes("captcha") ||
+    normalizedDescription.includes("bot") ||
+    normalizedDescription.includes("verification")
+  ) {
+    return "Auth0 requested a bot check before continuing. Please try again and complete the CAPTCHA challenge.";
+  }
+
+  if (description) {
+    return description;
+  }
+
+  if (normalizedError === "access_denied") {
+    return "Auth0 denied the login request. Please try again.";
+  }
+
+  return "We couldn't complete sign in with Auth0. Please try again.";
+}
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -140,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Auth0User | null>(null);
   // Stay in loading state until we've validated the session.
   const [isLoading, setIsLoading] = useState(Platform.OS === "web");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     logAuth0Urls("App boot");
@@ -192,15 +233,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [storeUser],
   );
 
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
+
+  const setAuthErrorMessage = useCallback(
+    (error: string, description?: string | null) => {
+      setAuthError(formatAuth0Error(error, description));
+    },
+    [],
+  );
+
   const authorize = useCallback(
     async (screenHint: "login" | "signup" = "login") => {
       logAuth0Urls(`Authorize: ${screenHint}`);
+      setAuthError(null);
 
       // ── Web: full-page redirect (no popup / new tab) ──────────────────────
       if (Platform.OS === "web") {
         const verifier = await generateVerifier();
         const challenge = await generateChallenge(verifier);
+        const state = await generateVerifier();
         sessionStorage.setItem(STORAGE_VERIFIER_KEY, verifier);
+        sessionStorage.setItem(STORAGE_STATE_KEY, state);
 
         const params = new URLSearchParams({
           response_type: "code",
@@ -210,6 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           code_challenge: challenge,
           code_challenge_method: "S256",
           screen_hint: screenHint,
+          prompt: "login",
+          state,
         });
         window.location.href = `https://${auth0Config.domain}/authorize?${params}`;
         return;
@@ -240,24 +297,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             discovery,
           );
           await fetchUserInfo(tokenRes.accessToken);
+        } else if (result.type === "error") {
+          setAuthErrorMessage(
+            result.params.error ?? "access_denied",
+            result.params.error_description,
+          );
         }
       } finally {
         setIsLoading(false);
       }
     },
-    [fetchUserInfo],
+    [fetchUserInfo, setAuthErrorMessage],
   );
 
   const login = useCallback(() => authorize("login"), [authorize]);
   const signUp = useCallback(() => authorize("signup"), [authorize]);
 
   const completeWebLogin = useCallback(
-    async (code: string) => {
+    async (code: string, state?: string | null) => {
       const verifier = sessionStorage.getItem(STORAGE_VERIFIER_KEY);
-      if (!verifier) return;
+      const expectedState = sessionStorage.getItem(STORAGE_STATE_KEY);
+      if (!verifier) {
+        throw new Error("missing_verifier");
+      }
+      if (expectedState && state !== expectedState) {
+        clearWebPkceSession();
+        throw new Error("invalid_state");
+      }
 
       const redirectUri = getRedirectUri();
-      const tokens = await fetch(`https://${auth0Config.domain}/oauth/token`, {
+      const tokenResponse = await fetch(`https://${auth0Config.domain}/oauth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -267,9 +336,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirect_uri: redirectUri,
           code_verifier: verifier,
         }),
-      }).then((r) => r.json());
+      });
+      const tokens = await tokenResponse.json();
 
-      sessionStorage.removeItem(STORAGE_VERIFIER_KEY);
+      if (!tokenResponse.ok || !tokens.access_token) {
+        clearWebPkceSession();
+        throw new Error(tokens.error_description ?? "token_exchange_failed");
+      }
+
+      clearWebPkceSession();
       await fetchUserInfo(tokens.access_token);
     },
     [fetchUserInfo],
@@ -304,7 +379,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, signUp, logout, completeWebLogin }}
+      value={{
+        user,
+        isLoading,
+        authError,
+        login,
+        signUp,
+        logout,
+        clearAuthError,
+        completeWebLogin,
+        setAuthErrorMessage,
+      }}
     >
       {children}
     </AuthContext.Provider>

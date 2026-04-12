@@ -1,8 +1,8 @@
-import { Redirect, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { Redirect, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from "@/context/auth-context";
 
 /**
  * Auth0 redirects here after login and logout.
@@ -14,21 +14,44 @@ import { useAuth } from '@/context/auth-context';
  */
 export default function AuthCallback() {
   const router = useRouter();
-  const { completeWebLogin } = useAuth();
+  const { completeWebLogin, setAuthErrorMessage } = useAuth();
   const [done, setDone] = useState(false);
-
-  const code =
-    Platform.OS === 'web'
-      ? new URLSearchParams(window.location.search).get('code')
+  const params =
+    Platform.OS === "web"
+      ? new URLSearchParams(window.location.search)
       : null;
 
+  const code = params?.get("code") ?? null;
+  const state = params?.get("state") ?? null;
+  const error = params?.get("error") ?? null;
+  const errorDescription = params?.get("error_description") ?? null;
+
   useEffect(() => {
+    if (error) {
+      setAuthErrorMessage(error, errorDescription);
+      setDone(true);
+      return;
+    }
+
     if (!code) return;
 
-    completeWebLogin(code)
-      .then(() => router.replace('/'))
-      .catch(() => setDone(true));
-  }, [code, completeWebLogin, router]);
+    completeWebLogin(code, state)
+      .then(() => router.replace("/"))
+      .catch((authError: unknown) => {
+        const message =
+          authError instanceof Error ? authError.message : "login_failed";
+        setAuthErrorMessage("access_denied", message);
+        setDone(true);
+      });
+  }, [
+    code,
+    completeWebLogin,
+    error,
+    errorDescription,
+    router,
+    setAuthErrorMessage,
+    state,
+  ]);
 
   if (!code || done) {
     return <Redirect href="/login" />;

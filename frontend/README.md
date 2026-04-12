@@ -6,7 +6,17 @@ Expo frontend for basketball shot analysis, wired to the KinetiQ FastAPI backend
 
 1. Review `frontend/.env`
 2. Confirm the Firebase `EXPO_PUBLIC_FIREBASE_*` values
-3. Confirm `EXPO_PUBLIC_KINETIQ_API_URL` points at the backend, currently `http://172.20.10.13:8000`
+3. Confirm `EXPO_PUBLIC_AUTH0_DOMAIN` and `EXPO_PUBLIC_AUTH0_CLIENT_ID` are set for the Auth0 application
+4. Confirm `EXPO_PUBLIC_KINETIQ_API_URL` points at the backend, currently `http://172.20.10.13:8000`
+
+## Auth0 CAPTCHA / Bot Detection
+
+This app uses Auth0 Universal Login for both web and native sign-in. The CAPTCHA itself is rendered by Auth0, not by Expo, so enabling the challenge requires an Auth0 dashboard change in addition to the frontend code in this repo.
+
+1. In the Auth0 Dashboard, enable Universal Login for the application.
+2. Turn on Bot Detection for the tenant so Auth0 can require a CAPTCHA challenge during suspicious login or signup attempts.
+3. Make sure the application's Allowed Callback URLs include the Expo web callback and native callback handled by `frontend/context/auth-context.tsx`.
+4. If Auth0 redirects back with a CAPTCHA or verification error, the login screen will now display that message instead of silently bouncing back to `/login`.
 
 ## Start the app
 
