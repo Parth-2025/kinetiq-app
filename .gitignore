@@ -49,3 +49,15 @@ frontend/.expo/
 frontend/dist/
 frontend/web-build/
 backend/.venv/
+
+# Python backend
+__pycache__/
+*.pyc
+backend/.venv/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.cache/
+*.task
