@@ -7,12 +7,12 @@
           "elbow_angle": {
             "ideal": "155\u2013180\u00b0",
             "score": 0.0,
-            "value": 80.0
+            "value": 83.2
           }
         },
         "description": "Finishing position after release",
         "emoji": "\ud83e\udd1a",
-        "feedback": "Wrist isn't snapping down \u2014 hold a 'goose neck' finish with fingers pointing at the rim for 1 second.",
+        "feedback": "Arm collapsing too early (83\u00b0) \u2014 fully extend and hold your follow-through.",
         "resources": [
           {
             "label": "Perfect Shot (No Basket)",
@@ -24,7 +24,7 @@
           }
         ],
         "score": 0.0,
-        "status": "error",
+        "status": "warning",
         "title": "Follow Through"
       },
       "load": {
@@ -102,12 +102,12 @@
           "elbow_angle": {
             "ideal": "155\u2013175\u00b0",
             "score": 0.0,
-            "value": 89.6
+            "value": 83.2
           },
           "knee_angle": {
             "ideal": "160\u2013180\u00b0",
             "score": 0.0,
-            "value": 117.1
+            "value": 103.1
           },
           "shoulder_tilt": {
             "ideal": "0.0\u20130.05",
@@ -117,7 +117,7 @@
         },
         "description": "The moment the ball leaves your hand",
         "emoji": "\ud83d\ude80",
-        "feedback": "Not fully extending at release (90\u00b0) \u2014 straighten to 155\u2013175\u00b0 for maximum arc.",
+        "feedback": "Not fully extending at release (83\u00b0) \u2014 straighten to 155\u2013175\u00b0 for maximum arc.",
         "resources": [
           {
             "label": "1-Step Form Shooting",
@@ -171,10 +171,10 @@
     "priority": "follow_through"
   },
   "phases": {
-    "follow_through": 36,
+    "follow_through": 26,
     "load": 24,
     "ready_position": 0,
-    "release": 29,
+    "release": 26,
     "set_point": 26
   }
 }

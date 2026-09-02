@@ -168,5 +168,5 @@ SCENARIOS: dict[str, dict] = {
                        release_elbow_deg=168.0, guide_elbow_deg=80.0, shoulder_tilt=0.01),
     "truncated": dict(view="side", load_knee_deg=95.0, setpoint_elbow_deg=92.0,
                       release_elbow_deg=168.0, guide_elbow_deg=80.0, shoulder_tilt=0.01,
-                      truncate_frac=0.62),
+                      truncate_frac=0.45),
 }
