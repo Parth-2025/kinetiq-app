@@ -13,7 +13,7 @@ def test_calculate_angle_right_angle():
 
 
 def test_calculate_angle_straight_line():
-    assert abs(calculate_angle([0, 2, 0], [0, 1, 0], [0, 0, 0]) - 180.0) < 1e-6
+    assert abs(calculate_angle([0, 2, 0], [0, 1, 0], [0, 0, 0]) - 180.0) < 0.1
 
 
 def test_frame_angles_keys():

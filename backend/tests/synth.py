@@ -105,7 +105,9 @@ def make_shot(
         sh_guide = neck + np.array([-sh_sh if shooting_side == "right" else sh_sh, 0.0])
         g_elbow_dir = _rot(up, -35 if shooting_side == "right" else 35)
         elbow_g = sh_guide + _UPPER_ARM * g_elbow_dir
-        wrist_g = elbow_g + _FOREARM * _rot(-g_elbow_dir, guide_elbow_deg)
+        wrist_g = elbow_g + _FOREARM * _rot(
+            -g_elbow_dir, guide_elbow_deg if shooting_side == "right" else -guide_elbow_deg
+        )
 
         left_is_shoot = shooting_side == "left"
         sh_L, sh_R = (sh_shoot, sh_guide) if left_is_shoot else (sh_guide, sh_shoot)
