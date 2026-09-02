@@ -1,0 +1,180 @@
+{
+  "analysis": {
+    "overall_score": 65.9,
+    "phases": {
+      "follow_through": {
+        "angles_measured": {
+          "elbow_angle": {
+            "ideal": "155\u2013180\u00b0",
+            "score": 0.0,
+            "value": 80.0
+          }
+        },
+        "description": "Finishing position after release",
+        "emoji": "\ud83e\udd1a",
+        "feedback": "Wrist isn't snapping down \u2014 hold a 'goose neck' finish with fingers pointing at the rim for 1 second.",
+        "resources": [
+          {
+            "label": "Perfect Shot (No Basket)",
+            "url": "https://jr.nba.com/video/perfect-shot-no-basket/"
+          },
+          {
+            "label": "Jr. NBA at Home: Form Shooting",
+            "url": "https://jr.nba.com/jr-nba-at-home-form-shooting/"
+          }
+        ],
+        "score": 0.0,
+        "status": "error",
+        "title": "Follow Through"
+      },
+      "load": {
+        "angles_measured": {
+          "elbow_angle": {
+            "ideal": "80\u2013115\u00b0",
+            "score": 94.7,
+            "value": 78.4
+          },
+          "hip_angle": {
+            "ideal": "100\u2013140\u00b0",
+            "score": 100.0,
+            "value": 132.3
+          },
+          "knee_angle": {
+            "ideal": "80\u2013110\u00b0",
+            "score": 100.0,
+            "value": 93.7
+          }
+        },
+        "description": "Knee bend to generate upward power",
+        "emoji": "\ud83e\uddb5",
+        "feedback": "Excellent leg load at 94\u00b0 \u2014 generating great power from your base.",
+        "resources": [
+          {
+            "label": "Practice the Shooting Proper Form",
+            "url": "https://jr.nba.com/video/practice-the-shooting-proper-form/"
+          },
+          {
+            "label": "Proper Shooting Technique Guide",
+            "url": "https://www.breakthroughbasketball.com/fundamentals/shooting-technique.html"
+          }
+        ],
+        "score": 98.2,
+        "status": "good",
+        "title": "Load / Dip"
+      },
+      "ready_position": {
+        "angles_measured": {
+          "hip_tilt": {
+            "ideal": "0.0\u20130.04",
+            "score": 100.0,
+            "value": 0.0
+          },
+          "knee_angle": {
+            "ideal": "160\u2013175\u00b0",
+            "score": 100.0,
+            "value": 166.3
+          },
+          "shoulder_tilt": {
+            "ideal": "0.0\u20130.04",
+            "score": 100.0,
+            "value": 0.0
+          }
+        },
+        "description": "Starting stance before the shot",
+        "emoji": "\ud83c\udfc0",
+        "feedback": "Great ready position \u2014 balanced stance and squared shoulders give you a strong foundation.",
+        "resources": [
+          {
+            "label": "Set Up Your Footwork Before Your Shot",
+            "url": "https://jr.nba.com/video/set-up-your-footwork-before-your-shot/"
+          },
+          {
+            "label": "Fundamentals of Shooting",
+            "url": "https://jr.nba.com/video/fundamentals-of-shooting/"
+          }
+        ],
+        "score": 100.0,
+        "status": "good",
+        "title": "Ready Position"
+      },
+      "release": {
+        "angles_measured": {
+          "elbow_angle": {
+            "ideal": "155\u2013175\u00b0",
+            "score": 0.0,
+            "value": 89.6
+          },
+          "knee_angle": {
+            "ideal": "160\u2013180\u00b0",
+            "score": 0.0,
+            "value": 117.1
+          },
+          "shoulder_tilt": {
+            "ideal": "0.0\u20130.05",
+            "score": 100.0,
+            "value": 0.0
+          }
+        },
+        "description": "The moment the ball leaves your hand",
+        "emoji": "\ud83d\ude80",
+        "feedback": "Not fully extending at release (90\u00b0) \u2014 straighten to 155\u2013175\u00b0 for maximum arc.",
+        "resources": [
+          {
+            "label": "1-Step Form Shooting",
+            "url": "https://jr.nba.com/video/1-step-form-shooting/"
+          },
+          {
+            "label": "Basketball Shooting Resources",
+            "url": "https://www.breakthroughbasketball.com/fundamentals/shooting.html"
+          }
+        ],
+        "score": 33.3,
+        "status": "error",
+        "title": "Release"
+      },
+      "set_point": {
+        "angles_measured": {
+          "elbow_angle": {
+            "ideal": "85\u2013100\u00b0",
+            "score": 93.9,
+            "value": 83.2
+          },
+          "guide_elbow_angle": {
+            "ideal": "60\u2013100\u00b0",
+            "score": 100.0,
+            "value": 80.0
+          },
+          "knee_angle": {
+            "ideal": "100\u2013150\u00b0",
+            "score": 100.0,
+            "value": 103.1
+          }
+        },
+        "description": "Ball position before release",
+        "emoji": "\ud83d\udcaa",
+        "feedback": "Elbow over-tucked (83\u00b0) \u2014 open slightly to 85\u2013100\u00b0 for a fluid extension.",
+        "resources": [
+          {
+            "label": "Dirk Shows Off Perfect Shooting Form",
+            "url": "https://jr.nba.com/dirk-shows-off-perfect-shooting-form/"
+          },
+          {
+            "label": "Form Shooting - 2 Hands",
+            "url": "https://jr.nba.com/video/form-shooting-2-hands/"
+          }
+        ],
+        "score": 98.0,
+        "status": "warning",
+        "title": "Set Point"
+      }
+    },
+    "priority": "follow_through"
+  },
+  "phases": {
+    "follow_through": 59,
+    "load": 24,
+    "ready_position": 0,
+    "release": 29,
+    "set_point": 26
+  }
+}
