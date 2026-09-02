@@ -1,3 +1,5 @@
+# NOTE: the legacy analyzer modules were removed in Task 11. This script is kept
+# for provenance only; its output lives in tests/golden/legacy_*.json. Do not run.
 """One-shot: run the CURRENT analyzer on the fixtures, freeze the output.
 Run from backend/ BEFORE refactoring: python -m tests.capture_legacy_golden
 """
