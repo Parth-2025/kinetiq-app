@@ -5,7 +5,6 @@ from analyzer.phases import (
     extract_phase_angles,
     segment_phases,
 )
-
 from tests import synth
 from tests.conftest import load_fixture
 
@@ -63,6 +62,22 @@ def test_no_pose_returns_all_none_and_oblique():
     out = segment_phases(angles_per_frame(load_fixture("no_pose")))
     assert all(v is None for v in out["phases"].values())
     assert out["camera_view"] == "oblique"
+
+
+def test_release_taken_on_shooting_arm_not_guide_flip():
+    """elbow_flare_side holds the guide arm at ~125 deg. Release must be detected
+    on the shooting (right) arm mid-extension, never frozen on the guide constant."""
+    from analyzer.angles import angles_per_frame
+    from analyzer.phases import extract_phase_angles, segment_phases
+    from tests.conftest import load_fixture
+
+    al = angles_per_frame(load_fixture("elbow_flare_side"))
+    seg = segment_phases(al)
+    pa = extract_phase_angles(al, seg["phases"])
+    assert pa["release"] is not None
+    assert pa["release"]["shooting_side"] == "right"
+    # arm is extending: release elbow angle exceeds the set-point elbow angle
+    assert pa["release"]["elbow_angle"] > pa["set_point"]["elbow_angle"]
 
 
 def test_extract_phase_angles_shape():

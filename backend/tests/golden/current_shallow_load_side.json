@@ -1,13 +1,13 @@
 {
   "analysis": {
-    "overall_score": 61.4,
+    "overall_score": 87.7,
     "phases": {
       "follow_through": {
         "angles_measured": {
           "elbow_angle": {
             "ideal": "155\u2013180\u00b0",
-            "score": 0.0,
-            "value": 80.0
+            "score": 100.0,
+            "value": 167.2
           }
         },
         "description": "Finishing position after release",
@@ -23,7 +23,7 @@
             "url": "https://jr.nba.com/jr-nba-at-home-form-shooting/"
           }
         ],
-        "score": 0.0,
+        "score": 100.0,
         "status": "error",
         "title": "Follow Through"
       },
@@ -101,13 +101,13 @@
         "angles_measured": {
           "elbow_angle": {
             "ideal": "155\u2013175\u00b0",
-            "score": 0.0,
-            "value": 87.6
+            "score": 46.0,
+            "value": 138.8
           },
           "knee_angle": {
             "ideal": "160\u2013180\u00b0",
-            "score": 51.5,
-            "value": 145.5
+            "score": 100.0,
+            "value": 163.7
           },
           "shoulder_tilt": {
             "ideal": "0\u20130.05",
@@ -117,7 +117,7 @@
         },
         "description": "The moment the ball leaves your hand",
         "emoji": "\ud83d\ude80",
-        "feedback": "Not fully extending at release (88\u00b0) \u2014 straighten to 155\u2013175\u00b0 for maximum arc.",
+        "feedback": "Not fully extending at release (139\u00b0) \u2014 straighten to 155\u2013175\u00b0 for maximum arc.",
         "resources": [
           {
             "label": "1-Step Form Shooting",
@@ -128,7 +128,7 @@
             "url": "https://www.breakthroughbasketball.com/fundamentals/shooting.html"
           }
         ],
-        "score": 50.5,
+        "score": 82.0,
         "status": "error",
         "title": "Release"
       },
@@ -168,7 +168,7 @@
         "title": "Set Point"
       }
     },
-    "priority": "follow_through"
+    "priority": "load"
   },
   "camera_view": "side",
   "confidence": 0.8539,
@@ -176,7 +176,7 @@
     "follow_through": 59,
     "load": 24,
     "ready_position": 15,
-    "release": 28,
+    "release": 37,
     "set_point": 26
   }
 }

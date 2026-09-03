@@ -1,7 +1,6 @@
 from analyzer.angles import angles_per_frame
 from analyzer.phases import extract_phase_angles, segment_phases
 from analyzer.scoring import IDEALS, PHASE_INFO, analyze, score_metric
-
 from tests.conftest import load_fixture
 
 

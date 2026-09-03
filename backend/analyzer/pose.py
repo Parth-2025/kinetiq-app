@@ -3,6 +3,7 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
+
 from settings import settings
 
 LANDMARKS = {

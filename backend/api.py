@@ -1,13 +1,17 @@
+import logging
 import os
 import tempfile
 from typing import Annotated
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from analyzer import pose, rendering
 from analyzer.angles import angles_per_frame
 from analyzer.phases import extract_phase_angles, segment_phases
 from analyzer.scoring import analyze
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.concurrency import run_in_threadpool
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -45,8 +49,9 @@ async def analyze_shot(video: Annotated[UploadFile, File()]) -> dict:
         return result
     except HTTPException:
         raise
-    except Exception as exc:  # noqa: BLE001 - surface as 500 with detail
-        raise HTTPException(500, f"Server error: {exc}") from exc
+    except Exception as exc:
+        logger.exception("analyze failed")
+        raise HTTPException(500, "Internal server error") from exc
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)

@@ -9,23 +9,41 @@ deliberate changes below. Baselines: `tests/golden/legacy_*.json` (old),
 
 | Phase | Before | After |
 |---|---|---|
-| set_point | global min shooting-wrist y | unchanged |
+| set_point | min shooting-wrist y among frames at/after the load frame | global min shooting-wrist y (see note on search order) |
 | load | global min knee angle over the whole clip | min knee angle in frames up to and including set point |
 | ready_position | global max knee angle before load | last frame before load within 15° of the pre-load max knee angle |
 | release | set_point index + 3 valid frames | after set point, frame of maximum elbow-extension velocity |
 | follow_through | last valid frame | last frame after release with the shooting wrist above the shooting shoulder; `None` if the clip ends at/near set point |
 
+**Search-order note:** the legacy code found `load` first (global min knee),
+then searched for `set_point` only in frames at/after `load`. The new code
+finds `set_point` first (global min wrist-y), then searches for `load` only in
+frames at/before `set_point`. The order inverted, but on all six fixtures the
+global wrist-y minimum already lies at or after the load frame, so the
+`set_point` index is identical to legacy — `test_no_regression.py` pins this.
+
 Rationale: the "+3 frames" rule produced a release frame unrelated to the
 actual arm extension and broke on clips at different frame rates or lengths.
+
+### Shooting-side is now fixed for the whole clip
+
+`analyzer/angles.py` picks the shooting arm once per clip — the side whose
+wrist reaches the highest point (minimum y) anywhere in the sequence — and
+measures every frame on that arm. The legacy code re-decided left/right on
+each frame from "which wrist is higher right now", so during the descending
+follow-through it silently switched to whichever hand was momentarily higher
+(often the guide hand), freezing that arm's angles into the `release` and
+`follow_through` metrics. This was the single largest source of wrong scores
+on the fixtures.
 
 Observed index deltas on the fixtures (`legacy_*` → `current_*`):
 
 | Fixture | ready_position | release | follow_through |
 |---|---|---|---|
-| good_form_side | 0 → 11 | 29 → 28 | 59 → 59 (unchanged) |
-| shallow_load_side | 0 → 15 | 29 → 28 | 59 → 59 (unchanged) |
-| elbow_flare_side | 0 → 9 | 29 → 30 | 59 → 59 (unchanged) |
-| front_view | 0 → 11 | 29 → 28 | 59 → 59 (unchanged) |
+| good_form_side | 0 → 11 | 29 → 37 | 59 → 59 |
+| shallow_load_side | 0 → 15 | 29 → 37 | 59 → 59 |
+| elbow_flare_side | 0 → 11 | 29 → 28 | 59 → 32 |
+| front_view | 0 → 11 | 29 → 37 | 59 → 59 |
 | truncated | 0 → 11 | 26 → `None` | 26 → `None` |
 
 `load` and `set_point` indices are unchanged on every fixture.
@@ -34,6 +52,17 @@ Because `ready_position` now lands on a real pre-load frame instead of frame 0,
 the knee angle measured there drops (e.g. good_form_side 166.3° → 152.4°), which
 flips that phase from "good" to "warning" and changes its feedback string. This
 is the intended effect of the new rule, not a scoring-curve change.
+
+With the shooting side fixed, `follow_through` on the full-length fixtures is
+measured on the extended shooting arm (~167°, ideal 155–180°) instead of the
+collapsed guide arm, so its score goes 0 → 100 and the overall score rises
+sharply: good_form_side / front_view 65.9 → 92.9, shallow_load_side 63.6 →
+87.7. `elbow_flare_side` holds the guide arm at 125°: legacy release froze that
+125° constant (score 33.3); the new core takes release on the shooting arm
+mid-extension (still 33.3 here because that clip's shooting elbow is also flared
+at release by design, but the value is now the real shooting-arm angle), and
+`follow_through` moves to frame 32 where the shooting wrist drops below the
+shoulder. Overall 60.4 → 63.0.
 
 On `truncated` the clip ends at the set point, so `release` and
 `follow_through` are `None`; both phases report `status: "unavailable"` with an
@@ -70,3 +99,20 @@ wrote `0.0–0.04`. Cosmetic only; the numeric bands are unchanged.
 new top-level fields on `POST /analyze`. On the fixtures: side views score
 `confidence` ≈ 0.85, `front_view` scores ≈ 0.28. Front / oblique views yield
 `confidence <= 0.4`; the analysis still runs. Nothing existing was removed.
+
+## 5. Known limitations (Phase B follow-ups)
+
+- `analyzer/pose.ensure_model()` serialises the model download with a
+  `threading.Lock` only — safe for a single-process server, not for multiple
+  worker processes. There is no size/checksum check on the downloaded model,
+  so a truncated download would be cached until the file is removed by hand.
+  `_MODEL_URL` pins the `latest` tag rather than a fixed model revision.
+- `tests/test_core_purity.py` enforces the pure/IO boundary by AST scan over an
+  explicit list of core modules (`angles.py`, `phases.py`, `scoring.py`). It
+  does not follow transitive imports and must be extended when Phase B adds
+  `segmentation.py`.
+- `POST /analyze` reads the whole upload into memory with no size cap.
+- On the `/analyze` error path the temp file is created just outside the
+  `try/finally` that unlinks it, so a failure between `NamedTemporaryFile` and
+  the `try` would orphan it. Harmless in practice; tighten when the handler is
+  next touched.

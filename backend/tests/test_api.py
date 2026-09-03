@@ -49,3 +49,14 @@ def test_analyze_422_when_no_pose(client, monkeypatch):
     monkeypatch.setattr(pose, "extract_landmarks_from_video", lambda _p: [None] * 30)
     r = client.post("/analyze", files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")})
     assert r.status_code == 422
+
+
+def test_analyze_500_hides_internal_error(client, monkeypatch):
+    def boom(_p):
+        raise RuntimeError("/private/tmp/leaky/path detail")
+
+    from analyzer import pose
+    monkeypatch.setattr(pose, "extract_landmarks_from_video", boom)
+    r = client.post("/analyze", files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")})
+    assert r.status_code == 500
+    assert r.json()["detail"] == "Internal server error"

@@ -1,8 +1,8 @@
 import numpy as np
+
 from analyzer.angles import angles_per_frame
 from analyzer.phases import extract_phase_angles, segment_phases
 from analyzer.rendering import generate_pose_gif, render_phase_images
-
 from tests import synth
 
 

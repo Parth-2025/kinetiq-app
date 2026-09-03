@@ -23,10 +23,11 @@ def calculate_angle(a, b, c) -> float:
     return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
 
 
-def frame_angles(frame: dict) -> dict:
-    lw_y = float(frame["left_wrist"][1])
-    rw_y = float(frame["right_wrist"][1])
-    side = "right" if rw_y < lw_y else "left"
+def frame_angles(frame: dict, side: str | None = None) -> dict:
+    if side is None:
+        lw_y = float(frame["left_wrist"][1])
+        rw_y = float(frame["right_wrist"][1])
+        side = "right" if rw_y < lw_y else "left"
     opp = "left" if side == "right" else "right"
 
     sh_mid_y = (float(frame["left_shoulder"][1]) + float(frame["right_shoulder"][1])) / 2.0
@@ -57,4 +58,10 @@ def frame_angles(frame: dict) -> dict:
 
 
 def angles_per_frame(frames: list) -> list:
-    return [frame_angles(f) if f is not None else None for f in frames]
+    lw = [float(f["left_wrist"][1]) for f in frames if f is not None]
+    rw = [float(f["right_wrist"][1]) for f in frames if f is not None]
+    if not lw and not rw:
+        side = None
+    else:
+        side = "right" if min(rw, default=1.0) <= min(lw, default=1.0) else "left"
+    return [frame_angles(f, side=side) if f is not None else None for f in frames]

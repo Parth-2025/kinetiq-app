@@ -1,6 +1,7 @@
-from api import router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from api import router
 from settings import settings
 
 app = FastAPI(title="KinetiQ Shot Analyzer")

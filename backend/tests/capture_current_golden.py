@@ -7,7 +7,6 @@ from pathlib import Path
 from analyzer.angles import angles_per_frame
 from analyzer.phases import extract_phase_angles, segment_phases
 from analyzer.scoring import analyze
-
 from tests.conftest import load_fixture
 
 OUT = Path(__file__).parent / "golden"

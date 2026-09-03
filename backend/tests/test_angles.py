@@ -1,6 +1,6 @@
 import pytest
-from analyzer.angles import angles_per_frame, calculate_angle, frame_angles
 
+from analyzer.angles import angles_per_frame, calculate_angle, frame_angles
 from tests import synth
 from tests.conftest import FIXTURE_NAMES, load_fixture
 
