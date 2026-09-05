@@ -8,7 +8,8 @@ from tests import synth
 
 @pytest.fixture
 def client(monkeypatch):
-    from analyzer import pose, rendering
+    from analyzer import pose
+    from analyzer.sports.basketball import rendering
 
     raw = []
     for f in synth.make_shot(n_frames=60):
@@ -28,15 +29,45 @@ def client(monkeypatch):
     return TestClient(main.app)
 
 
+def _post(client, **extra):
+    return client.post(
+        "/analyze",
+        files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")},
+        data=extra,
+    )
+
+
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
 
 
+def test_sports_lists_basketball(client):
+    rows = client.get("/sports").json()
+    assert any(r["name"] == "basketball" for r in rows)
+    bb = next(r for r in rows if r["name"] == "basketball")
+    assert bb["phase_order"] == ["ready_position", "load", "set_point", "release", "follow_through"]
+
+
+def test_analyze_requires_sport(client):
+    r = _post(client)
+    assert r.status_code == 400
+    assert r.json()["detail"] == "sport is required"
+
+
+def test_analyze_rejects_unknown_sport(client):
+    r = _post(client, sport="curling")
+    assert r.status_code == 400
+    assert "curling" in r.json()["detail"]
+
+
 def test_analyze_returns_legacy_shape_plus_new_fields(client):
-    r = client.post("/analyze", files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")})
+    r = _post(client, sport="basketball")
     assert r.status_code == 200
     body = r.json()
     assert {"overall_score", "priority", "phases", "pose_gif", "phase_images"} <= body.keys()
+    assert body["sport"] == "basketball"
+    assert body["motion"] == "jump shot"
+    assert body["phase_order"] == ["ready_position", "load", "set_point", "release", "follow_through"]
     assert body["camera_view"] in {"side", "front", "oblique"}
     assert 0.0 <= body["confidence"] <= 1.0
     assert set(body["phases"]) == {
@@ -47,7 +78,7 @@ def test_analyze_returns_legacy_shape_plus_new_fields(client):
 def test_analyze_422_when_no_pose(client, monkeypatch):
     from analyzer import pose
     monkeypatch.setattr(pose, "extract_landmarks_from_video", lambda _p: [None] * 30)
-    r = client.post("/analyze", files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")})
+    r = _post(client, sport="basketball")
     assert r.status_code == 422
 
 
@@ -57,6 +88,6 @@ def test_analyze_500_hides_internal_error(client, monkeypatch):
 
     from analyzer import pose
     monkeypatch.setattr(pose, "extract_landmarks_from_video", boom)
-    r = client.post("/analyze", files={"video": ("shot.mp4", io.BytesIO(b"x"), "video/mp4")})
+    r = _post(client, sport="basketball")
     assert r.status_code == 500
     assert r.json()["detail"] == "Internal server error"

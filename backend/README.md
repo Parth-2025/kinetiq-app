@@ -13,6 +13,9 @@ pip install -r requirements-dev.txt      # runtime + test deps
 uvicorn main:app --reload --port 8000
 ```
 
+`POST /analyze` is multipart: `video=<file>` and `sport=basketball`
+(list options at `GET /sports`).
+
 ### Configuration (env, prefix `KINETIQ_`)
 
 | Var | Default | Meaning |
