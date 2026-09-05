@@ -3,7 +3,12 @@ from abc import ABC, abstractmethod
 
 class SportPlugin(ABC):
     """One analysable sport. Subclasses set the four class attributes and
-    implement the three abstract methods; `render` has a no-overlay default."""
+    implement the three abstract methods; `render` has a no-overlay default.
+
+    One instance per sport is created once and shared across all concurrent
+    requests, so plugin instances MUST be stateless — never store per-request
+    or per-clip data on `self`; thread everything through the method arguments
+    and return values."""
 
     name: str
     display_name: str

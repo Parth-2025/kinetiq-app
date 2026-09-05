@@ -1,5 +1,5 @@
 from analyzer.sports.base import SportPlugin
-from analyzer.sports.basketball import metrics, phases, rendering, scoring
+from analyzer.sports.basketball import metrics, phases, scoring
 
 
 class BasketballPlugin(SportPlugin):
@@ -18,6 +18,8 @@ class BasketballPlugin(SportPlugin):
         return scoring.score(phase_metrics)
 
     def render(self, frames: list, metrics_list: list, phases_dict: dict, phase_metrics: dict) -> dict:
+        from analyzer.sports.basketball import rendering
+
         return rendering.render_all(frames, metrics_list, phases_dict, phase_metrics)
 
 
