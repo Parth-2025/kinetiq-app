@@ -3,7 +3,16 @@ from pathlib import Path
 
 import pytest
 
-CORE = ["angles.py", "phases.py", "scoring.py"]
+CORE = [
+    "geometry.py",
+    "scoring_curve.py",
+    "camera.py",
+    "skeleton.py",
+    # legacy modules still present until Task 6 — keep asserting they stay pure
+    "angles.py",
+    "phases.py",
+    "scoring.py",
+]
 FORBIDDEN = {"fastapi", "cv2", "PIL", "mediapipe", "sqlalchemy", "starlette"}
 ANALYZER = Path(__file__).resolve().parents[1] / "analyzer"
 
