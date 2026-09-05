@@ -8,7 +8,14 @@ CORE = [
     "scoring_curve.py",
     "camera.py",
     "skeleton.py",
-    # legacy modules still present until Task 6 — keep asserting they stay pure
+    "pipeline.py",
+    "registry.py",
+    "sports/base.py",
+    "sports/basketball/__init__.py",
+    "sports/basketball/metrics.py",
+    "sports/basketball/phases.py",
+    "sports/basketball/scoring.py",
+    # legacy modules still present until Task 6
     "angles.py",
     "phases.py",
     "scoring.py",

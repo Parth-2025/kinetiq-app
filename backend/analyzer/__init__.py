@@ -1,8 +1,4 @@
-from analyzer.angles import angles_per_frame, calculate_angle, frame_angles
-from analyzer.phases import PHASE_KEYS, extract_phase_angles, segment_phases
-from analyzer.scoring import analyze
+from analyzer.pipeline import run
+from analyzer.registry import UnknownSport, get_plugin, list_sports
 
-__all__ = [
-    "angles_per_frame", "calculate_angle", "frame_angles",
-    "PHASE_KEYS", "extract_phase_angles", "segment_phases", "analyze",
-]
+__all__ = ["run", "get_plugin", "list_sports", "UnknownSport"]
