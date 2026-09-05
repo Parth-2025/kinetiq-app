@@ -1,9 +1,15 @@
 import numpy as np
 
-from analyzer.angles import angles_per_frame
-from analyzer.phases import extract_phase_angles, segment_phases
-from analyzer.rendering import generate_pose_gif, render_phase_images
+from analyzer.sports.basketball import BasketballPlugin
+from analyzer.sports.basketball.rendering import generate_pose_gif, render_phase_images
 from tests import synth
+
+_PLUGIN = BasketballPlugin()
+
+
+def _pm(metrics, phases):
+    order = ["ready_position", "load", "set_point", "release", "follow_through"]
+    return {p: (metrics[phases[p]] if phases.get(p) is not None else None) for p in order}
 
 
 def _raw_frames(n=40):
@@ -19,15 +25,15 @@ def _raw_frames(n=40):
 
 def test_generate_pose_gif_returns_string_without_raw_landmarks():
     frames = _raw_frames()
-    out = generate_pose_gif(frames, angles_per_frame(frames))
+    out = generate_pose_gif(frames, _PLUGIN.frame_metrics(frames))
     assert isinstance(out, str)  # "" is acceptable when _raw_landmarks is None
 
 
 def test_render_phase_images_keys():
     frames = _raw_frames()
-    al = angles_per_frame(frames)
-    seg = segment_phases(al)
-    imgs = render_phase_images(frames, al, seg["phases"], extract_phase_angles(al, seg["phases"]))
+    al = _PLUGIN.frame_metrics(frames)
+    seg = _PLUGIN.segment(al)
+    imgs = render_phase_images(frames, al, seg["phases"], _pm(al, seg["phases"]))
     assert set(imgs) == {"ready_position", "load", "set_point", "release", "follow_through"}
     for pair in imgs.values():
         assert set(pair) == {"user_frame", "ideal_frame"}
