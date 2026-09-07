@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: kinetiq
+      POSTGRES_PASSWORD: kinetiq
+      POSTGRES_DB: kinetiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - kinetiq_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kinetiq"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  kinetiq_pg:

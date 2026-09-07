@@ -8,6 +8,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kinetiq
+          POSTGRES_PASSWORD: kinetiq
+          POSTGRES_DB: kinetiq
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kinetiq"
+          --health-interval 3s --health-timeout 3s --health-retries 10
+    env:
+      KINETIQ_DATABASE_URL: postgresql+psycopg://kinetiq:kinetiq@localhost:5432/kinetiq
+      KINETIQ_TEST_DATABASE_URL: postgresql+psycopg://kinetiq:kinetiq@localhost:5432/kinetiq_test
     defaults:
       run:
         working-directory: backend
