@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: kinetiq-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python -m alembic upgrade head
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: KINETIQ_DATABASE_URL
+        sync: false
+      - key: KINETIQ_AUTH0_DOMAIN
+        sync: false
+      - key: KINETIQ_CORS_ORIGINS
+        sync: false

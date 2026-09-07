@@ -16,6 +16,19 @@ uvicorn main:app --reload --port 8000
 `POST /analyze` is multipart: `video=<file>` and `sport=basketball`
 (list options at `GET /sports`).
 
+### Database (B1+)
+
+```bash
+docker compose -f backend/docker-compose.yml up -d      # local Postgres
+cd backend
+export KINETIQ_DATABASE_URL=postgresql+psycopg://kinetiq:kinetiq@localhost:5432/kinetiq
+export KINETIQ_AUTH0_DOMAIN=<your-tenant>.us.auth0.com
+python -m alembic upgrade head
+uvicorn main:app --reload --port 8000
+```
+
+`/me/*` endpoints require `Authorization: Bearer <Auth0 access token>`.
+
 ### Configuration (env, prefix `KINETIQ_`)
 
 | Var | Default | Meaning |

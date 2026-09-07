@@ -150,3 +150,23 @@ basketball's skeleton/GIF rendering is lazy-loaded inside
 - `POST /analyze` responses gain three additive top-level keys: `sport`,
   `motion`, `phase_order`. Everything else is unchanged.
 - New `GET /sports` returns `[{name, display_name, motion, phase_order}]`.
+
+## 7. Persistence layer (B1)
+
+A Postgres persistence layer now sits behind the API for user profile,
+sports selection, and analysis sessions. New packages `backend/db/`,
+`backend/auth/`, `backend/routers/` (independent of `analyzer/` — enforced
+by `tests/test_layering.py`).
+
+- Auth: every `/me/*` request needs `Authorization: Bearer <Auth0 access
+  token>`. The backend validates it against `https://<AUTH0_DOMAIN>/userinfo`
+  with a 5-minute in-process cache and upserts a `users` row. Single
+  process only — a cold start re-hits `/userinfo` once per token.
+- Endpoints: `GET/PATCH /me`, `GET /me/username-available`,
+  `GET/PUT/POST/DELETE /me/sports*`, `POST/GET /me/sessions*`,
+  `GET /me/stats`. Stats are derived from `analysis_sessions`, never
+  stored.
+- Config: `KINETIQ_DATABASE_URL`, `KINETIQ_AUTH0_DOMAIN`,
+  `KINETIQ_TEST_DATABASE_URL` (tests). Migrations: `alembic upgrade head`.
+- Local: `docker compose -f backend/docker-compose.yml up -d`.
+- Deploy: `render.yaml` (Render free web service) + Neon free Postgres.
