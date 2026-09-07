@@ -2,6 +2,7 @@ import os
 
 import pytest
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
@@ -56,3 +57,32 @@ def db_session(pg_engine) -> Session:
         session.close()
         trans.rollback()
         conn.close()
+
+
+@pytest.fixture
+def client(db_session):
+    import main
+    from db.session import get_db
+
+    main.app.dependency_overrides[get_db] = lambda: db_session
+    try:
+        with TestClient(main.app) as c:
+            yield c
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def as_user(client, db_session):
+    import main
+    from auth.dependency import current_user
+    from db.models import User
+
+    def _make(**overrides):
+        u = User(auth0_sub=overrides.pop("auth0_sub", "auth0|test"), **overrides)
+        db_session.add(u)
+        db_session.flush()
+        main.app.dependency_overrides[current_user] = lambda: u
+        return u
+
+    return _make
