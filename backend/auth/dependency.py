@@ -64,7 +64,7 @@ async def _fetch_claims(token: str) -> dict:
 
 async def current_user(
     authorization: str | None = Header(default=None, alias="Authorization"),
-    db: Session = Depends(get_db),  # noqa: B008  (FastAPI DI idiom)
+    db: Session = Depends(get_db),
 ) -> User:
     # Header default=None (not `...`) so a *missing* header is 401, not 422.
     if not authorization:

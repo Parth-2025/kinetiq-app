@@ -3,8 +3,6 @@ import pytest
 from auth.dependency import _TokenCache
 from db.models import User
 
-pytestmark = pytest.mark.skip(reason="needs /me route from Task 4")
-
 
 class _Resp:
     def __init__(self, status_code: int, payload: dict):
