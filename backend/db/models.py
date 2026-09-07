@@ -10,6 +10,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 _UUID_DEFAULT = text("gen_random_uuid()")
 _NOW = text("now()")
+# clock_timestamp() advances within a transaction, so rows inserted back-to-back
+# (e.g. in one request/test) get strictly increasing timestamps — needed for
+# deterministic "newest first" ordering of analysis_sessions.
+_CLOCK = text("clock_timestamp()")
 
 
 class Base(DeclarativeBase):
@@ -73,5 +77,5 @@ class AnalysisSession(Base):
     source: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     analysis: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), server_default=_NOW, index=True
+        DateTime(timezone=True), server_default=_CLOCK, index=True
     )

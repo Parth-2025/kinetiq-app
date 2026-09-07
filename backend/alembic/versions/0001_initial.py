@@ -47,7 +47,11 @@ def upgrade() -> None:
         sa.Column("overall_score", sa.Numeric(precision=6, scale=2)),
         sa.Column("source", postgresql.JSONB(), nullable=False),
         sa.Column("analysis", postgresql.JSONB(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("clock_timestamp()"),
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
     )
     op.create_index("ix_analysis_sessions_user_id", "analysis_sessions", ["user_id"])

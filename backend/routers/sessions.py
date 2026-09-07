@@ -67,7 +67,9 @@ def list_sessions(
         q = q.where(AnalysisSession.sport == sport)
     if before:
         q = q.where(AnalysisSession.created_at < before)
-    q = q.order_by(AnalysisSession.created_at.desc()).limit(limit)
+    q = q.order_by(
+        AnalysisSession.created_at.desc(), AnalysisSession.id.desc()
+    ).limit(limit)
     return [_meta(s) for s in db.execute(q).scalars().all()]
 
 
