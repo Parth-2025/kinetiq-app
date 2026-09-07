@@ -1,10 +1,10 @@
-import { ComingSoon } from '@/components/coming-soon';
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Screen } from "@/components/ui/Screen";
 
 export default function AddFriendsScreen() {
   return (
-    <ComingSoon
-      title="Friends are coming back soon"
-      body="Adding friends returns in the next KinetiQ update."
-    />
+    <Screen>
+      <EmptyState icon="person" title="Add friends" body="Coming in a future update." />
+    </Screen>
   );
 }

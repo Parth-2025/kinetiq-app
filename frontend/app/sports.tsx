@@ -1,338 +1,132 @@
-import { router } from 'expo-router';
-import React, { useState } from 'react';
-import {
-  Alert,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from "expo-router";
+import { useState } from "react";
+import { Modal, View } from "react-native";
 
-import {
-  ACCENT_SURFACE_ALT,
-  APP_BORDER,
-  APP_OVERLAY,
-  APP_SHADOW,
-  APP_SURFACE_SUBTLE,
-  HOME_BG,
-  HOME_CARD,
-  HOME_LABEL,
-  HOME_TEXT,
-  PURPLE,
-  WHITE,
-} from '@/constants/colors';
-import { invalidate, useApiMutation, useApiQuery } from '@/hooks/use-api';
+import { AppBar } from "@/components/ui/AppBar";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { InlineAlert } from "@/components/ui/InlineAlert";
+import { ListItem } from "@/components/ui/ListItem";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { invalidate, useApiMutation, useApiQuery } from "@/hooks/use-api";
+import { useTheme } from "@/theme";
 
 const SPORTS = [
-  { name: 'Basketball', emoji: '🏀' },
-  { name: 'Soccer',     emoji: '⚽' },
-  { name: 'Tennis',     emoji: '🎾' },
-  { name: 'Baseball',   emoji: '⚾' },
-  { name: 'Football',   emoji: '🏈' },
-  { name: 'Volleyball', emoji: '🏐' },
-  { name: 'Swimming',   emoji: '🏊' },
+  { name: "Basketball", key: "basketball" },
+  { name: "Soccer", key: "soccer" },
+  { name: "Tennis", key: "tennis" },
+  { name: "Baseball", key: "baseball" },
+  { name: "Football", key: "football" },
+  { name: "Volleyball", key: "volleyball" },
+  { name: "Swimming", key: "swimming" },
 ];
 
 type SportsState = { active: string | null; selected: string[] };
 
 export default function SportsScreen() {
-  const { value: sportsState } = useApiQuery<SportsState>('sports', '/me/sports');
+  const t = useTheme();
+  const { value: sportsState } = useApiQuery<SportsState>("sports", "/me/sports");
   const activeSport = sportsState?.active ?? null;
-  const selectedSports = new Set(sportsState?.selected ?? []);
+  const selected = new Set(sportsState?.selected ?? []);
 
-  const addSport = useApiMutation<SportsState>('/me/sports/selected', 'POST');
-  const setActive = useApiMutation<SportsState>('/me/sports/active', 'PUT');
+  const addSport = useApiMutation<SportsState>("/me/sports/selected", "POST");
+  const setActive = useApiMutation<SportsState>("/me/sports/active", "PUT");
 
-  const [confirmSport, setConfirmSport] = useState<{ name: string; emoji: string } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  async function handleSportPress(sport: { name: string; emoji: string }) {
-    const s = sport.name.toLowerCase();
-    if (selectedSports.has(sport.name) || selectedSports.has(s)) {
+  async function handleBasketballPress() {
+    setErrorMsg(null);
+    if (selected.has("basketball")) {
       try {
-        await setActive.mutate({ sport: s });
-        invalidate('sports');
+        await setActive.mutate({ sport: "basketball" });
+        invalidate("sports");
       } catch {
-        Alert.alert("Couldn't update sports", 'Please check your connection and try again.');
+        setErrorMsg("Could not update your sport. Check your connection and try again.");
       }
     } else {
-      setConfirmSport(sport);
+      setConfirmOpen(true);
     }
   }
 
-  async function handleAddSport() {
-    if (!confirmSport) return;
+  async function handleAdd() {
+    setErrorMsg(null);
     try {
-      await addSport.mutate({ sport: confirmSport.name.toLowerCase() });
-      invalidate('sports');
+      await addSport.mutate({ sport: "basketball" });
+      invalidate("sports");
     } catch {
-      Alert.alert("Couldn't update sports", 'Please check your connection and try again.');
+      setErrorMsg("Could not add the sport. Check your connection and try again.");
     } finally {
-      setConfirmSport(null);
+      setConfirmOpen(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-          <Text style={styles.backArrow}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>My Sports</Text>
-        <View style={styles.backBtn} />
+    <Screen scroll appBar={<AppBar title="Sport" onBack={() => router.back()} />}>
+      <View style={{ gap: t.space.m }}>
+        {errorMsg ? <InlineAlert tone="danger" message={errorMsg} onDismiss={() => setErrorMsg(null)} /> : null}
+        <Text variant="body1" color="textSecondary">
+          Basketball is live. More sports are on the way.
+        </Text>
+
+        {SPORTS.map((s, i) => {
+          const isBasketball = s.key === "basketball";
+          const isActive = activeSport === s.key;
+          return (
+            <ListItem
+              key={s.key}
+              leading={isBasketball ? "basketball" : undefined}
+              title={s.name}
+              divider={i < SPORTS.length - 1}
+              onPress={isBasketball ? handleBasketballPress : undefined}
+              trailing={
+                isBasketball ? (
+                  isActive ? (
+                    <Chip label="Active" tone="accent" />
+                  ) : (
+                    <Chip label={selected.has("basketball") ? "Set active" : "Add"} />
+                  )
+                ) : (
+                  <Text variant="caption1" color="textSecondary">
+                    Coming soon
+                  </Text>
+                )
+              }
+            />
+          );
+        })}
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.subtitle}>Tap to switch or add sports</Text>
-
-        {/* ── Sport list card ── */}
-        <View style={styles.listCard}>
-          {SPORTS.map((sport, index) => {
-            const s = sport.name.toLowerCase();
-            const isSelected = selectedSports.has(sport.name) || selectedSports.has(s);
-            const isActive = activeSport === s;
-            return (
-              <TouchableOpacity
-                key={sport.name}
-                style={[
-                  styles.row,
-                  index < SPORTS.length - 1 && styles.rowBorder,
-                  isActive && styles.rowActive,
-                ]}
-                onPress={() => handleSportPress(sport)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.emoji}>{sport.emoji}</Text>
-                <Text style={styles.sportName}>{sport.name}</Text>
-                {isActive && (
-                  <View style={styles.activeBadge}>
-                    <Text style={styles.activeBadgeText}>Active</Text>
-                  </View>
-                )}
-                <View style={styles.rowRight}>
-                  {isSelected ? (
-                    <Text style={styles.checkmark}>✓</Text>
-                  ) : (
-                    <Text style={styles.plus}>+</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-
-      {/* ── Confirm Add Modal ── */}
-      <Modal
-        visible={!!confirmSport}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setConfirmSport(null)}
-      >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setConfirmSport(null)}
+      <Modal visible={confirmOpen} transparent animationType="fade" onRequestClose={() => setConfirmOpen(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: t.color.overlay,
+            justifyContent: "flex-end",
+            padding: t.space.l,
+          }}
         >
-          <TouchableOpacity activeOpacity={1} style={styles.modal}>
-            <Text style={styles.modalTitle}>Add {confirmSport?.name}?</Text>
-            <Text style={styles.modalSubtitle}>
-              Start tracking your {confirmSport?.name} rankings and stats
+          <View
+            style={{
+              backgroundColor: t.color.layer,
+              borderRadius: t.radius.xl,
+              padding: t.space.l,
+              gap: t.space.m,
+              ...(t.mode === "light" ? t.elevation.shadow16 : { borderWidth: 1, borderColor: t.color.stroke }),
+            }}
+          >
+            <Text variant="subtitle1">Add Basketball?</Text>
+            <Text variant="body1" color="textSecondary">
+              Start tracking your basketball shots and stats.
             </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => setConfirmSport(null)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.addBtn]}
-                onPress={handleAddSport}
-              >
-                <Text style={styles.addText}>Add Sport</Text>
-              </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: t.space.s, justifyContent: "flex-end" }}>
+              <Button label="Cancel" appearance="outline" onPress={() => setConfirmOpen(false)} />
+              <Button label="Add sport" onPress={handleAdd} />
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: HOME_BG,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: APP_BORDER,
-    backgroundColor: HOME_BG,
-  },
-  backBtn: {
-    width: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  backArrow: {
-    fontSize: 32,
-    color: PURPLE,
-    lineHeight: 36,
-    marginTop: -4,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: HOME_TEXT,
-    letterSpacing: -0.3,
-  },
-
-  // Body
-  scroll: { flex: 1 },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: HOME_LABEL,
-    fontWeight: '400',
-  },
-
-  // List card
-  listCard: {
-    backgroundColor: HOME_CARD,
-    borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: APP_SHADOW,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    gap: 14,
-  },
-  rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: APP_BORDER,
-  },
-  rowActive: {
-    backgroundColor: ACCENT_SURFACE_ALT,
-  },
-  emoji: {
-    fontSize: 26,
-    lineHeight: 32,
-  },
-  sportName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: HOME_TEXT,
-    letterSpacing: -0.2,
-  },
-  activeBadge: {
-    backgroundColor: PURPLE,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  activeBadgeText: {
-    color: WHITE,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  rowRight: {
-    width: 28,
-    alignItems: 'center',
-  },
-  checkmark: {
-    fontSize: 20,
-    color: PURPLE,
-    fontWeight: '700',
-  },
-  plus: {
-    fontSize: 22,
-    color: HOME_LABEL,
-    fontWeight: '300',
-  },
-
-  // Modal
-  overlay: {
-    flex: 1,
-    backgroundColor: APP_OVERLAY,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
-  modal: {
-    width: '100%',
-    backgroundColor: HOME_CARD,
-    borderRadius: 24,
-    padding: 24,
-    gap: 8,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: HOME_TEXT,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: HOME_LABEL,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  modalBtn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelBtn: {
-    backgroundColor: APP_SURFACE_SUBTLE,
-  },
-  cancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: HOME_TEXT,
-  },
-  addBtn: {
-    backgroundColor: PURPLE,
-  },
-  addText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: WHITE,
-  },
-});

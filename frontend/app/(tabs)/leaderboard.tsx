@@ -1,10 +1,10 @@
-import { ComingSoon } from '@/components/coming-soon';
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Screen } from "@/components/ui/Screen";
 
 export default function LeaderboardScreen() {
   return (
-    <ComingSoon
-      title="Leaderboards are coming back soon"
-      body="Rankings return in the next KinetiQ update."
-    />
+    <Screen>
+      <EmptyState icon="trophy" title="Leaderboards" body="Coming in a future update." />
+    </Screen>
   );
 }

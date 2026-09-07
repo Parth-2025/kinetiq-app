@@ -1,15 +1,13 @@
-import { Redirect, Tabs } from 'expo-router';
-import React from 'react';
+import { Redirect, Tabs } from "expo-router";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/context/auth-context';
-import { useUserProfile } from '@/hooks/use-user-profile';
-
-const PURPLE = '#6C47FF';
-const GRAY = '#8E8E93';
+import { HapticTab } from "@/components/haptic-tab";
+import { Icon } from "@/components/icons/Icon";
+import { useAuth } from "@/context/auth-context";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { useTheme } from "@/theme";
 
 export default function TabLayout() {
+  const t = useTheme();
   const { user, isLoading } = useAuth();
   const { hasUsername, isLoading: isProfileLoading } = useUserProfile(user?.sub);
 
@@ -23,59 +21,46 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: PURPLE,
-        tabBarInactiveTintColor: GRAY,
+        tabBarActiveTintColor: t.color.accent,
+        tabBarInactiveTintColor: t.color.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopWidth: 0,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: -2 },
+          backgroundColor: t.color.layer,
+          borderTopWidth: 1,
+          borderTopColor: t.color.stroke,
+          ...(t.mode === "light"
+            ? t.elevation.shadow8
+            : { elevation: 0, shadowOpacity: 0 }),
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+          fontSize: t.type.caption1.fontSize,
+          fontFamily: t.fonts.sans,
         },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: 'Messages',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="message.fill" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => <Icon name="home" size={24} hex={color} />,
         }}
       />
       <Tabs.Screen
         name="upload"
         options={{
-          title: 'Upload',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="plus.circle.fill" color={color} />,
+          title: "Upload",
+          tabBarIcon: ({ color }) => <Icon name="arrow-upload" size={24} hex={color} />,
         }}
       />
       <Tabs.Screen
-        name="shop"
+        name="profile"
         options={{
-          title: 'Shop',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="bag.fill" color={color} />,
+          title: "Profile",
+          tabBarIcon: ({ color }) => <Icon name="person" size={24} hex={color} />,
         }}
       />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="trophy.fill" color={color} />,
-        }}
-      />
-      {/* Hide the old explore tab */}
-      <Tabs.Screen name="explore" options={{ href: null }} />
+      <Tabs.Screen name="messages" options={{ href: null }} />
+      <Tabs.Screen name="shop" options={{ href: null }} />
+      <Tabs.Screen name="leaderboard" options={{ href: null }} />
     </Tabs>
   );
 }

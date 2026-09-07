@@ -1,257 +1,134 @@
-import { Redirect, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Redirect, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
 
-import {
-  AUTH_BG,
-  AUTH_CARD,
-  AUTH_MUTED,
-  AUTH_SUBTLE,
-  AUTH_TEXT,
-  PURPLE,
-  WHITE_15,
-} from '@/constants/colors';
-import { ApiError, apiFetch } from '@/config/api';
-import { useAuth } from '@/context/auth-context';
-import { useUserProfile } from '@/hooks/use-user-profile';
-import {
-  getUsernameValidationMessage,
-  normalizeUsernameInput,
-} from '@/services/user-profile';
+import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { ApiError, apiFetch } from "@/config/api";
+import { useAuth } from "@/context/auth-context";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { isValidUsername, normalizeUsernameInput } from "@/services/user-profile";
+import { useTheme } from "@/theme";
+
+const FORMAT_HINT = "3–20 characters: lowercase letters, numbers, or underscores.";
 
 export default function UsernameOnboardingScreen() {
+  const t = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   const { profile, isLoading } = useUserProfile(user?.sub);
-  const [username, setUsername] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+
+  const [raw, setRaw] = useState("");
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const suggestedUsername = useMemo(() => {
-    const base = normalizeUsernameInput(user?.name ?? user?.email ?? 'player');
-    return base || 'player';
-  }, [user?.email, user?.name]);
+  const username = normalizeUsernameInput(raw);
+  const formatValid = isValidUsername(username);
 
-  if (!user) {
-    return <Redirect href="/login" />;
-  }
-
-  if (!isLoading && profile?.username) {
-    return <Redirect href="/(tabs)" />;
-  }
-
-  async function handleSave() {
-    const nextUsername = normalizeUsernameInput(username || suggestedUsername);
-    const validationMessage = getUsernameValidationMessage(nextUsername);
-
-    if (validationMessage) {
-      setError(validationMessage);
-      return;
-    }
-
-    setIsSaving(true);
+  useEffect(() => {
+    setAvailable(null);
     setError(null);
+    if (!formatValid) return;
 
+    let cancelled = false;
+    setChecking(true);
+    const id = setTimeout(async () => {
+      try {
+        const res = await apiFetch<{ available: boolean }>(
+          `/me/username-available?u=${encodeURIComponent(username)}`,
+        );
+        if (!cancelled) setAvailable(res.available);
+      } catch {
+        if (!cancelled) setAvailable(null);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [username, formatValid]);
+
+  if (!user) return <Redirect href="/login" />;
+  if (!isLoading && profile?.username) return <Redirect href="/(tabs)" />;
+
+  const fieldState: "default" | "error" | "success" =
+    !username || checking
+      ? "default"
+      : !formatValid || available === false
+        ? "error"
+        : available
+          ? "success"
+          : "default";
+
+  const helper = error
+    ? undefined
+    : !formatValid && username
+      ? FORMAT_HINT
+      : checking
+        ? "Checking availability…"
+        : available === false
+          ? "That username is taken."
+          : available
+            ? "That username is available."
+            : FORMAT_HINT;
+
+  async function handleContinue() {
+    if (!formatValid || available !== true) return;
+    setSaving(true);
+    setError(null);
     try {
-      const { available } = await apiFetch<{ available: boolean }>(
-        `/me/username-available?u=${encodeURIComponent(nextUsername)}`,
-      );
-
-      if (!available) {
-        setError('That username is taken.');
-        return;
-      }
-
-      await apiFetch('/me/profile', {
-        method: 'PATCH',
-        body: { username: nextUsername },
-      });
-      router.replace('/(tabs)');
+      await apiFetch("/me/profile", { method: "PATCH", body: { username } });
+      router.replace("/(tabs)");
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 409) {
-          setError('That username is taken.');
-        } else if (err.status === 400) {
-          setError(err.detail || 'That username format is not allowed.');
-        } else {
-          setError('We could not save your username.');
-        }
-      } else {
-        setError(err instanceof Error ? err.message : 'We could not save your username.');
-      }
+      if (err instanceof ApiError && err.status === 409) setError("That username is taken.");
+      else if (err instanceof ApiError && err.status === 400)
+        setError(err.detail || "That username format is not allowed.");
+      else setError("We could not save your username. Please try again.");
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.keyboardShell}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.hero}>
-          <Text style={styles.eyebrow}>Finish sign up</Text>
-          <Text style={styles.title}>Pick the username people will see in messages.</Text>
-          <Text style={styles.subtitle}>
-            Cosmetics can match across players, so chat identity is anchored to your unique username.
+    <Screen>
+      <View style={{ gap: t.space.l }}>
+        <View style={{ gap: t.space.s }}>
+          <Text variant="title2">Choose a username</Text>
+          <Text variant="body1" color="textSecondary">
+            This is how other players will see you. You can’t change it later.
           </Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Username</Text>
-          <View style={styles.inputRow}>
-            <Text style={styles.prefix}>@</Text>
-            <TextInput
-              value={username}
-              onChangeText={(value) => {
-                setUsername(normalizeUsernameInput(value));
-                if (error) {
-                  setError(null);
-                }
-              }}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder={suggestedUsername}
-              placeholderTextColor={AUTH_MUTED}
-              style={styles.input}
-              editable={!isSaving}
-              returnKeyType="done"
-              onSubmitEditing={handleSave}
-              maxLength={20}
-            />
-          </View>
-          <Text style={styles.helper}>
-            3-20 characters. Use lowercase letters, numbers, or underscores.
-          </Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Field
+          label="Username"
+          prefix="@"
+          value={raw}
+          onChangeText={setRaw}
+          placeholder="player"
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={20}
+          state={fieldState}
+          helper={helper}
+          error={error ?? undefined}
+          onSubmitEditing={handleContinue}
+        />
 
-          <Pressable
-            onPress={handleSave}
-            disabled={isSaving}
-            style={({ pressed }) => [
-              styles.saveButton,
-              pressed && !isSaving && styles.saveButtonPressed,
-              isSaving && styles.saveButtonDisabled,
-            ]}
-          >
-            {isSaving ? (
-              <ActivityIndicator size="small" color={AUTH_TEXT} />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Username</Text>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <Button
+          label="Continue"
+          fullWidth
+          loading={saving}
+          disabled={!formatValid || available !== true}
+          onPress={handleContinue}
+        />
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: AUTH_BG,
-  },
-  keyboardShell: {
-    flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: 32,
-    paddingBottom: 28,
-  },
-  hero: {
-    gap: 12,
-  },
-  eyebrow: {
-    color: AUTH_SUBTLE,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: AUTH_TEXT,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '800',
-    letterSpacing: -0.7,
-  },
-  subtitle: {
-    color: AUTH_SUBTLE,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  card: {
-    marginTop: 28,
-    borderRadius: 24,
-    backgroundColor: AUTH_CARD,
-    padding: 20,
-  },
-  label: {
-    color: AUTH_TEXT,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  inputRow: {
-    marginTop: 12,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: WHITE_15,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  prefix: {
-    color: AUTH_SUBTLE,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  input: {
-    flex: 1,
-    color: AUTH_TEXT,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  helper: {
-    marginTop: 12,
-    color: AUTH_MUTED,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  error: {
-    marginTop: 10,
-    color: '#FF9CA5',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  saveButton: {
-    marginTop: 20,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: PURPLE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  saveButtonDisabled: {
-    opacity: 0.75,
-  },
-  saveButtonText: {
-    color: AUTH_TEXT,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-});

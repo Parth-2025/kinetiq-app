@@ -1,8 +1,10 @@
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 
+import { Text } from "@/components/ui/Text";
 import { useAuth } from "@/context/auth-context";
+import { useTheme } from "@/theme";
 
 /**
  * Auth0 redirects here after login and logout.
@@ -14,6 +16,7 @@ import { useAuth } from "@/context/auth-context";
  */
 export default function AuthCallback() {
   const router = useRouter();
+  const t = useTheme();
   const { completeWebLogin, setAuthErrorMessage } = useAuth();
   const [done, setDone] = useState(false);
   const params =
@@ -58,16 +61,9 @@ export default function AuthCallback() {
   }
 
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color="#0a7ea4" />
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: t.color.bg, gap: t.space.m }}>
+      <ActivityIndicator size="large" color={t.color.accent} />
+      <Text variant="body1" color="textSecondary">Signing you in…</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
