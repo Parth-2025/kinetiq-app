@@ -4,7 +4,7 @@ import datetime
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint, text
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -33,9 +33,11 @@ class User(Base):
         ForeignKey("analysis_sessions.id", ondelete="SET NULL", use_alter=True,
                    name="fk_users_active_session"),
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(server_default=_NOW)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=_NOW
+    )
     updated_at: Mapped[datetime.datetime] = mapped_column(
-        server_default=_NOW, server_onupdate=_NOW
+        DateTime(timezone=True), server_default=_NOW, server_onupdate=_NOW
     )
 
     sports: Mapped[list[UserSport]] = relationship(
@@ -45,13 +47,14 @@ class User(Base):
 
 class UserSport(Base):
     __tablename__ = "user_sports"
-    __table_args__ = (UniqueConstraint("user_id", "sport", name="pk_user_sports"),)
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     sport: Mapped[str] = mapped_column(Text, primary_key=True)
-    added_at: Mapped[datetime.datetime] = mapped_column(server_default=_NOW)
+    added_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=_NOW
+    )
 
     user: Mapped[User] = relationship(back_populates="sports")
 
@@ -69,4 +72,6 @@ class AnalysisSession(Base):
     overall_score: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     source: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     analysis: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    created_at: Mapped[datetime.datetime] = mapped_column(server_default=_NOW, index=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=_NOW, index=True
+    )

@@ -1,5 +1,7 @@
 import uuid
 
+from sqlalchemy import delete
+
 from db.models import AnalysisSession, User, UserSport
 
 
@@ -18,7 +20,8 @@ def test_user_sports_and_cascade(db_session):
     db_session.add(u)
     db_session.flush()
     assert [s.sport for s in u.sports] == ["basketball"]
-    db_session.delete(u)
+    # bypass the ORM cascade so the DB-level ondelete="CASCADE" is what's exercised
+    db_session.execute(delete(User).where(User.id == u.id))
     db_session.flush()
     assert db_session.query(UserSport).count() == 0
 
