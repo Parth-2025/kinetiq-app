@@ -13,7 +13,10 @@ from db.session import get_db
 
 router = APIRouter()
 
-_MAX_BLOB_BYTES = 3 * 1024 * 1024  # 3 MB combined
+# The analysis blob embeds the base64 pose GIF + per-phase skeleton images, so a
+# real result runs a few MB even for a short clip. 25 MB comfortably fits that
+# while still rejecting obvious abuse.
+_MAX_BLOB_BYTES = 25 * 1024 * 1024
 
 
 class SessionCreate(BaseModel):
