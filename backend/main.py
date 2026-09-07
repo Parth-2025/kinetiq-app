@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api import router as analyze_router
 from routers.profile import router as profile_router
+from routers.sports import router as sports_router
 from settings import settings
 
 app = FastAPI(title="KinetiQ Shot Analyzer")
@@ -14,3 +15,4 @@ app.add_middleware(
 )
 app.include_router(analyze_router)
 app.include_router(profile_router)
+app.include_router(sports_router)
