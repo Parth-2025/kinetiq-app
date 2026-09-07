@@ -1,29 +1,7 @@
-import numpy as np
-
-LANDMARKS = {
-    "left_shoulder": 11, "right_shoulder": 12,
-    "left_elbow": 13, "right_elbow": 14,
-    "left_wrist": 15, "right_wrist": 16,
-    "left_hip": 23, "right_hip": 24,
-    "left_knee": 25, "right_knee": 26,
-    "left_ankle": 27, "right_ankle": 28,
-    "left_heel": 29, "right_heel": 30,
-    "left_foot": 31, "right_foot": 32,
-    "nose": 0, "left_eye": 2, "right_eye": 5, "left_ear": 7, "right_ear": 8,
-}
+from analyzer.geometry import calculate_angle
 
 
-def calculate_angle(a, b, c) -> float:
-    a = np.asarray(a, dtype=float)
-    b = np.asarray(b, dtype=float)
-    c = np.asarray(c, dtype=float)
-    ba = a - b
-    bc = c - b
-    cosine = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
-    return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
-
-
-def frame_angles(frame: dict, side: str | None = None) -> dict:
+def _frame_angles(frame: dict, side: str | None = None) -> dict:
     if side is None:
         lw_y = float(frame["left_wrist"][1])
         rw_y = float(frame["right_wrist"][1])
@@ -57,11 +35,11 @@ def frame_angles(frame: dict, side: str | None = None) -> dict:
     }
 
 
-def angles_per_frame(frames: list) -> list:
+def frame_metrics(frames: list) -> list:
     lw = [float(f["left_wrist"][1]) for f in frames if f is not None]
     rw = [float(f["right_wrist"][1]) for f in frames if f is not None]
     if not lw and not rw:
         side = None
     else:
         side = "right" if min(rw, default=1.0) <= min(lw, default=1.0) else "left"
-    return [frame_angles(f, side=side) if f is not None else None for f in frames]
+    return [_frame_angles(f, side=side) if f is not None else None for f in frames]

@@ -4,9 +4,8 @@ Run from backend/: python -m tests.capture_current_golden
 import json
 from pathlib import Path
 
-from analyzer.angles import angles_per_frame
-from analyzer.phases import extract_phase_angles, segment_phases
-from analyzer.scoring import analyze
+from analyzer.pipeline import _extract_phase_metrics
+from analyzer.registry import get_plugin
 from tests.conftest import load_fixture
 
 OUT = Path(__file__).parent / "golden"
@@ -14,9 +13,12 @@ NAMES = ["good_form_side", "shallow_load_side", "elbow_flare_side", "front_view"
 
 
 def run_core(name: str) -> dict:
-    frames = angles_per_frame(load_fixture(name))
-    seg = segment_phases(frames)
-    analysis = analyze(extract_phase_angles(frames, seg["phases"]))
+    plugin = get_plugin("basketball")
+    frames = load_fixture(name)
+    metrics = plugin.frame_metrics(frames)
+    seg = plugin.segment(metrics)
+    phase_metrics = _extract_phase_metrics(metrics, seg["phases"], plugin.phase_order)
+    analysis = plugin.score(phase_metrics)
     return {
         "phases": seg["phases"],
         "camera_view": seg["camera_view"],

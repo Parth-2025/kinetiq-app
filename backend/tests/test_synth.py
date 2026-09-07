@@ -1,6 +1,6 @@
 import numpy as np
 
-from analyzer.angles import calculate_angle  # created in Task 4; see note below
+from analyzer.geometry import calculate_angle
 from tests import synth
 
 

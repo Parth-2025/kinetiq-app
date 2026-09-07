@@ -4,8 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/auth-context";
-import { useDatabaseLiveValue } from "@/hooks/use-database";
+import { useApiQuery } from "@/hooks/use-api";
 import type { AnalysisSession } from "@/types/analysis";
 import {
   formatAngleLabel,
@@ -14,7 +13,8 @@ import {
   isAnalysisPhaseKey,
   splitAngleMeasurements,
 } from "@/utils/analysis";
-import { formatUserId } from "@/utils/user";
+
+type SessionFull = { analysis: AnalysisSession["analysis"] };
 
 const ORANGE = "#E85D04";
 const BG = "#181818";
@@ -98,16 +98,15 @@ function FeedbackRow({
 
 export default function PhaseDetailScreen() {
   const params = useLocalSearchParams<{ sessionId?: string; phaseKey?: string }>();
-  const { user } = useAuth();
-  const userId = formatUserId(user?.sub);
   const phaseKey =
     typeof params.phaseKey === "string" && isAnalysisPhaseKey(params.phaseKey)
       ? params.phaseKey
       : "ready_position";
   const sessionId = typeof params.sessionId === "string" ? params.sessionId : null;
 
-  const { value: session } = useDatabaseLiveValue<AnalysisSession>(
-    sessionId ? `users/${userId}/analysisSessions/${sessionId}` : null,
+  const { value: session } = useApiQuery<SessionFull | null>(
+    sessionId ? `session:${sessionId}` : null,
+    sessionId ? `/me/sessions/${sessionId}` : null,
   );
 
   const phase = session?.analysis.phases[phaseKey];

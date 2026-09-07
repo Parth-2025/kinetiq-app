@@ -3,7 +3,19 @@ from pathlib import Path
 
 import pytest
 
-CORE = ["angles.py", "phases.py", "scoring.py"]
+CORE = [
+    "geometry.py",
+    "scoring_curve.py",
+    "camera.py",
+    "skeleton.py",
+    "pipeline.py",
+    "registry.py",
+    "sports/base.py",
+    "sports/basketball/__init__.py",
+    "sports/basketball/metrics.py",
+    "sports/basketball/phases.py",
+    "sports/basketball/scoring.py",
+]
 FORBIDDEN = {"fastapi", "cv2", "PIL", "mediapipe", "sqlalchemy", "starlette"}
 ANALYZER = Path(__file__).resolve().parents[1] / "analyzer"
 

@@ -1,6 +1,7 @@
 import pytest
 
-from analyzer.angles import angles_per_frame, calculate_angle, frame_angles
+from analyzer.geometry import calculate_angle
+from analyzer.sports.basketball.metrics import _frame_angles, frame_metrics
 from tests import synth
 from tests.conftest import FIXTURE_NAMES, load_fixture
 
@@ -18,7 +19,7 @@ def test_calculate_angle_straight_line():
 
 def test_frame_angles_keys():
     frame = synth.make_shot(n_frames=10)[5]
-    a = frame_angles(frame)
+    a = _frame_angles(frame)
     assert set(a) == {
         "shooting_side", "elbow_angle", "knee_angle", "hip_angle",
         "guide_elbow_angle", "shoulder_tilt", "hip_tilt",
@@ -28,28 +29,28 @@ def test_frame_angles_keys():
 
 
 def test_shooting_side_follows_higher_wrist():
-    right = frame_angles(synth.make_shot(shooting_side="right")[30])
-    left = frame_angles(synth.make_shot(shooting_side="left")[30])
+    right = _frame_angles(synth.make_shot(shooting_side="right")[30])
+    left = _frame_angles(synth.make_shot(shooting_side="left")[30])
     assert right["shooting_side"] == "right"
     assert left["shooting_side"] == "left"
 
 
 def test_front_view_has_larger_torso_width():
-    side = frame_angles(synth.make_shot(view="side")[0])
-    front = frame_angles(synth.make_shot(view="front")[0])
+    side = _frame_angles(synth.make_shot(view="side")[0])
+    front = _frame_angles(synth.make_shot(view="front")[0])
     assert front["torso_width"] > side["torso_width"] + 0.1
     assert side["torso_height"] > 0.1
 
 
-def test_angles_per_frame_passes_none_through():
-    out = angles_per_frame([None, synth.make_shot(n_frames=3)[0], None])
+def test_frame_metrics_passes_none_through():
+    out = frame_metrics([None, synth.make_shot(n_frames=3)[0], None])
     assert out[0] is None and out[2] is None
     assert isinstance(out[1], dict)
 
 
 @pytest.mark.parametrize("name", FIXTURE_NAMES)
 def test_every_fixture_computes_without_error(name):
-    out = angles_per_frame(load_fixture(name))
+    out = frame_metrics(load_fixture(name))
     if name == "no_pose":
         assert all(x is None for x in out)
     else:

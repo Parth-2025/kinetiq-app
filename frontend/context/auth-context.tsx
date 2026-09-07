@@ -5,11 +5,14 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { Platform } from "react-native";
 
+import { registerTokenAccessor, registerUnauthorizedHandler } from "@/config/api";
 import { auth0Config } from "@/config/auth0";
+import { clearApiCache } from "@/hooks/use-api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -181,6 +184,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Stay in loading state until we've validated the session.
   const [isLoading, setIsLoading] = useState(Platform.OS === "web");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  const tokenRef = useRef<string | null>(null);
+  tokenRef.current = accessToken;
+  useEffect(() => {
+    registerTokenAccessor(() => tokenRef.current);
+    registerUnauthorizedHandler(() => {
+      setUser(null);
+      setAccessToken(null);
+      if (Platform.OS === "web") clearWebSession();
+      clearApiCache();
+    });
+  }, []);
 
   useEffect(() => {
     logAuth0Urls("App boot");
@@ -197,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const validatedUser = await validateToken(token);
           if (validatedUser) {
             setUser(validatedUser);
+            setAccessToken(token);
             // Refresh the stored user with the latest data from Auth0.
             localStorage.setItem(
               STORAGE_USER_KEY,
@@ -217,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const storeUser = useCallback((userData: Auth0User, accessToken?: string) => {
     setUser(userData);
+    if (accessToken) setAccessToken(accessToken);
     if (Platform.OS === "web") {
       localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
       if (accessToken) localStorage.setItem(STORAGE_TOKEN_KEY, accessToken);
@@ -354,6 +372,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // ── Web: clear token + full-page redirect logout ──────────────────────
     if (Platform.OS === "web") {
       clearWebSession();
+      setAccessToken(null);
+      clearApiCache();
       const logoutUrl =
         `https://${auth0Config.domain}/v2/logout` +
         `?client_id=${encodeURIComponent(auth0Config.clientId)}` +
@@ -372,6 +392,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `&returnTo=${encodeURIComponent(returnTo)}`;
       await WebBrowser.openAuthSessionAsync(logoutUrl, returnTo);
       setUser(null);
+      setAccessToken(null);
+      clearApiCache();
     } finally {
       setIsLoading(false);
     }

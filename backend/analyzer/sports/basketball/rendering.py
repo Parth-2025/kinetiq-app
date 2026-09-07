@@ -12,39 +12,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-# ── MediaPipe landmark indices ─────────────────────────────────────────────
-LANDMARKS = {
-    "left_shoulder": 11, "right_shoulder": 12,
-    "left_elbow": 13,    "right_elbow": 14,
-    "left_wrist": 15,    "right_wrist": 16,
-    "left_hip": 23,      "right_hip": 24,
-    "left_knee": 25,     "right_knee": 26,
-    "left_ankle": 27,    "right_ankle": 28,
-    "left_heel": 29,     "right_heel": 30,
-    "left_foot": 31,     "right_foot": 32,
-    "nose": 0,
-    "left_eye": 2,       "right_eye": 5,
-    "left_ear": 7,       "right_ear": 8,
-}
-
-SKELETON_CONNECTIONS = [
-    ("left_shoulder", "right_shoulder"),
-    ("left_shoulder", "left_hip"),
-    ("right_shoulder", "right_hip"),
-    ("left_hip", "right_hip"),
-    ("left_shoulder", "left_elbow"),
-    ("left_elbow", "left_wrist"),
-    ("right_shoulder", "right_elbow"),
-    ("right_elbow", "right_wrist"),
-    ("left_hip", "left_knee"),
-    ("left_knee", "left_ankle"),
-    ("left_ankle", "left_foot"),
-    ("right_hip", "right_knee"),
-    ("right_knee", "right_ankle"),
-    ("right_ankle", "right_foot"),
-    ("nose", "left_shoulder"),
-    ("nose", "right_shoulder"),
-]
+from analyzer.geometry import LANDMARKS
+from analyzer.skeleton import SKELETON_CONNECTIONS, get_joint_color
 
 IDEAL_RANGES = {
     "load":          {"knee": (80, 110),   "elbow": (80, 110),  "hip": (100, 140)},
@@ -52,15 +21,6 @@ IDEAL_RANGES = {
     "release":       {"elbow": (155, 175), "knee": (160, 180),  "shoulder_tilt": (0, 0.05)},
     "follow_through":{"elbow": (155, 180), "wrist_drop": (0.05, 0.3)},
 }
-
-
-def get_joint_color(angle: float, ideal_low: float, ideal_high: float) -> tuple[int, int, int]:
-    if ideal_low <= angle <= ideal_high:
-        return (0, 220, 0)
-    deviation = min(abs(angle - ideal_low), abs(angle - ideal_high))
-    if deviation < 20:
-        return (0, 200, 255)
-    return (0, 0, 255)
 
 
 def draw_skeleton_on_frame(
@@ -313,3 +273,10 @@ def render_phase_images(frames, angles_list, phases, phase_angles, size=(380, 38
         user_b64, ideal_b64 = extract_phase_frame_b64(frame_data, angles, phase, size=size)
         out[phase] = {"user_frame": user_b64, "ideal_frame": ideal_b64}
     return out
+
+
+def render_all(frames: list, metrics: list, phases: dict, phase_metrics: dict) -> dict:
+    return {
+        "pose_gif": generate_pose_gif(frames, metrics),
+        "phase_images": render_phase_images(frames, metrics, phases, phase_metrics),
+    }

@@ -1,32 +1,16 @@
-import numpy as np
+from analyzer.camera import classify_camera_view
 
-PHASE_KEYS = ["ready_position", "load", "set_point", "release", "follow_through"]
-
-
-def _valid(angles_list: list) -> list:
-    return [(i, a) for i, a in enumerate(angles_list) if a is not None]
+PHASE_ORDER = ["ready_position", "load", "set_point", "release", "follow_through"]
 
 
-def classify_camera_view(angles_list: list) -> tuple[str, float]:
-    ratios = []
-    for _, a in _valid(angles_list):
-        h = a.get("torso_height", 0.0)
-        if h > 1e-6:
-            ratios.append(a.get("torso_width", 0.0) / h)
-    if not ratios:
-        return "oblique", 0.2
-    ratio = float(np.median(ratios))
-    if ratio < 0.55:
-        return "side", float(min(1.0, 0.5 + (0.55 - ratio)))
-    if ratio > 0.9:
-        return "front", float(max(0.0, 0.4 - (ratio - 0.9)))
-    return "oblique", 0.4
+def _valid(metrics: list) -> list:
+    return [(i, a) for i, a in enumerate(metrics) if a is not None]
 
 
-def segment_phases(angles_list: list) -> dict:
-    valid = _valid(angles_list)
-    view, confidence = classify_camera_view(angles_list)
-    none_phases = {k: None for k in PHASE_KEYS}
+def segment(metrics: list) -> dict:
+    valid = _valid(metrics)
+    view, confidence = classify_camera_view(metrics)
+    none_phases = {k: None for k in PHASE_ORDER}
 
     if len(valid) < 5:
         return {"phases": none_phases, "camera_view": view, "confidence": confidence}
@@ -88,18 +72,3 @@ def segment_phases(angles_list: list) -> dict:
         "camera_view": view,
         "confidence": confidence,
     }
-
-
-def extract_phase_indices(phases: dict) -> dict:
-    return {k: phases.get(k) for k in PHASE_KEYS}
-
-
-def extract_phase_angles(angles_list: list, phases: dict) -> dict:
-    out = {}
-    for phase in PHASE_KEYS:
-        idx = phases.get(phase)
-        if idx is not None and 0 <= idx < len(angles_list) and angles_list[idx] is not None:
-            out[phase] = angles_list[idx]
-        else:
-            out[phase] = None
-    return out

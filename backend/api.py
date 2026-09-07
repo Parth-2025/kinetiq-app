@@ -3,13 +3,12 @@ import os
 import tempfile
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
-from analyzer import pose, rendering
-from analyzer.angles import angles_per_frame
-from analyzer.phases import extract_phase_angles, segment_phases
-from analyzer.scoring import analyze
+from analyzer import pose
+from analyzer.pipeline import run as run_pipeline
+from analyzer.registry import UnknownSport, get_plugin, list_sports
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +20,23 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@router.get("/sports")
+def sports() -> list[dict]:
+    return list_sports()
+
+
 @router.post("/analyze")
-async def analyze_shot(video: Annotated[UploadFile, File()]) -> dict:
+async def analyze_shot(
+    video: Annotated[UploadFile, File()],
+    sport: Annotated[str, Form()] = "",
+) -> dict:
+    if not sport:
+        raise HTTPException(400, "sport is required")
+    try:
+        plugin = get_plugin(sport)
+    except UnknownSport as exc:
+        raise HTTPException(400, str(exc)) from exc
+
     suffix = os.path.splitext(video.filename or "shot.mp4")[1] or ".mp4"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(await video.read())
@@ -32,21 +46,7 @@ async def analyze_shot(video: Annotated[UploadFile, File()]) -> dict:
         frames = await run_in_threadpool(pose.extract_landmarks_from_video, tmp_path)
         if not frames or all(f is None for f in frames):
             raise HTTPException(422, "No pose detected. Ensure your full body is visible.")
-
-        angles_list = angles_per_frame(frames)
-        seg = segment_phases(angles_list)
-        phase_angles = extract_phase_angles(angles_list, seg["phases"])
-        result = analyze(phase_angles)
-
-        result["pose_gif"] = await run_in_threadpool(
-            rendering.generate_pose_gif, frames, angles_list
-        )
-        result["phase_images"] = await run_in_threadpool(
-            rendering.render_phase_images, frames, angles_list, seg["phases"], phase_angles
-        )
-        result["camera_view"] = seg["camera_view"]
-        result["confidence"] = round(seg["confidence"], 4)
-        return result
+        return await run_in_threadpool(run_pipeline, frames, plugin)
     except HTTPException:
         raise
     except Exception as exc:

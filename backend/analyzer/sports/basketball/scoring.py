@@ -1,3 +1,6 @@
+from analyzer.scoring_curve import score_metric
+from analyzer.sports.basketball.phases import PHASE_ORDER
+
 IDEALS: dict[str, dict[str, dict]] = {
     "ready_position": {
         "knee_angle": {"lo": 160.0, "hi": 175.0, "falloff": 30.0},
@@ -56,14 +59,7 @@ PHASE_RESOURCES = {
 }
 
 
-def score_metric(value: float, lo: float, hi: float, falloff: float) -> float:
-    if lo <= value <= hi:
-        return 100.0
-    dist = min(abs(value - lo), abs(value - hi))
-    return max(0.0, round(100.0 * (1.0 - dist / falloff), 1))
-
-
-def _generate_feedback(phase: str, angles: dict) -> tuple[str, str]:
+def generate_feedback(phase: str, angles: dict) -> tuple[str, str]:
     if phase == "ready_position":
         tilt = angles.get("shoulder_tilt", 0)
         knee = angles.get("knee_angle", 170)
@@ -121,11 +117,11 @@ def _generate_feedback(phase: str, angles: dict) -> tuple[str, str]:
     return ("Analysis unavailable for this phase.", "warning")
 
 
-def analyze(phase_angles: dict) -> dict:
+def score(phase_angles: dict) -> dict:
     results: dict[str, dict] = {}
     all_scores: list[float] = []
 
-    for phase in ["ready_position", "load", "set_point", "release", "follow_through"]:
+    for phase in PHASE_ORDER:
         angles = phase_angles.get(phase)
         info = PHASE_INFO[phase]
         resources = PHASE_RESOURCES[phase]
@@ -157,7 +153,7 @@ def analyze(phase_angles: dict) -> dict:
 
         phase_score = round(sum(phase_scores) / len(phase_scores), 1) if phase_scores else 0
         all_scores.append(phase_score)
-        feedback_text, status = _generate_feedback(phase, angles)
+        feedback_text, status = generate_feedback(phase, angles)
         results[phase] = {
             **info,
             "score": phase_score,

@@ -10,12 +10,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/context/auth-context';
-import { useDatabaseLiveValue } from '@/hooks/use-database';
+import { useApiQuery } from '@/hooks/use-api';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { scoreToGrade } from '@/utils/analysis';
-import { formatUserId } from '@/utils/user';
-import type { AnalysisSession } from '@/types/analysis';
+
+type SessionMeta = {
+  id: string;
+  sport: string;
+  overall_score: number | null;
+  created_at: string;
+};
 
 const ORANGE  = '#E85D04';
 const BG      = '#181818';
@@ -41,32 +46,29 @@ function formatMemberSince(value: string | null | undefined) {
 
 export default function PlayerStatsScreen() {
   const { user } = useAuth();
-  const userId = formatUserId(user?.sub);
   const { profile } = useUserProfile(user?.sub);
   const { stats } = useUserStats(user?.sub);
-  const { value: sessionMap } = useDatabaseLiveValue<Record<string, AnalysisSession>>(
-    `users/${userId}/analysisSessions`,
+  const { value: sessions } = useApiQuery<SessionMeta[]>(
+    'sessions',
+    '/me/sessions?limit=4',
   );
 
   const displayName = user?.name
     ? user.name.toUpperCase()
     : 'PLAYER';
-  const recentSessions = Object.values(sessionMap ?? {})
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .slice(0, 4)
-    .map((session) => ({
+  const recentSessions = (sessions ?? []).map((session) => {
+    const score = Math.round(session.overall_score ?? 0);
+    return {
       id: session.id,
-      date: new Date(session.createdAt).toLocaleDateString('en-US', {
+      date: new Date(session.created_at).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
       }),
-      grade: scoreToGrade(Math.round(session.analysis.overall_score)),
-      score: Math.round(session.analysis.overall_score),
-    }));
+      grade: scoreToGrade(score),
+      score,
+    };
+  });
   const shotsAnalyzed = stats?.shotsAnalyzed ?? 0;
   const avgScore = stats?.avgScore?.toFixed(1) ?? '0.0';
   const bestScore = stats?.bestScore ?? 0;

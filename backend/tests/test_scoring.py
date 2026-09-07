@@ -1,13 +1,20 @@
-from analyzer.angles import angles_per_frame
-from analyzer.phases import extract_phase_angles, segment_phases
-from analyzer.scoring import IDEALS, PHASE_INFO, analyze, score_metric
+from analyzer.scoring_curve import score_metric
+from analyzer.sports.basketball import BasketballPlugin
+from analyzer.sports.basketball.phases import PHASE_ORDER
+from analyzer.sports.basketball.scoring import IDEALS, PHASE_INFO, score
 from tests.conftest import load_fixture
+
+_PLUGIN = BasketballPlugin()
 
 
 def _analyze(name):
-    frames = angles_per_frame(load_fixture(name))
-    seg = segment_phases(frames)
-    return analyze(extract_phase_angles(frames, seg["phases"]))
+    m = _PLUGIN.frame_metrics(load_fixture(name))
+    seg = _PLUGIN.segment(m)
+    phase_metrics = {}
+    for p in PHASE_ORDER:
+        idx = seg["phases"].get(p)
+        phase_metrics[p] = m[idx] if idx is not None and m[idx] is not None else None
+    return score(phase_metrics)
 
 
 def test_score_metric_inside_band_is_100():
@@ -57,7 +64,7 @@ def test_priority_is_lowest_scoring_phase():
 
 
 def test_missing_phase_scores_zero_unavailable():
-    result = analyze({k: None for k in PHASE_INFO})
+    result = score({k: None for k in PHASE_INFO})
     assert result["overall_score"] == 0
     for block in result["phases"].values():
         assert block["score"] == 0

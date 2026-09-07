@@ -20,11 +20,10 @@ import {
   PURPLE,
 } from '@/constants/colors';
 import { useAuth } from '@/context/auth-context';
-import { useDatabaseLiveValue } from '@/hooks/use-database';
+import { useApiQuery } from '@/hooks/use-api';
 import { useProfileCustomization } from '@/hooks/use-profile-customization';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useUserStats } from '@/hooks/use-user-stats';
-import { formatUserId } from '@/utils/user';
 
 const SPORT_EMOJI: Record<string, string> = {
   Basketball: '🏀',
@@ -38,11 +37,11 @@ const SPORT_EMOJI: Record<string, string> = {
 
 export default function HomeScreen() {
   const { user, logout } = useAuth();
-  const userId = formatUserId(user?.sub);
   const { customization } = useProfileCustomization(user?.sub);
   const { profile } = useUserProfile(user?.sub);
   const { stats } = useUserStats(user?.sub);
-  const { value: activeSport } = useDatabaseLiveValue<string>(`users/${userId}/sports/active`);
+  const { value: sportsState } = useApiQuery<{ active: string | null }>('sports', '/me/sports');
+  const activeSport = sportsState?.active ?? null;
 
   const displayVideos = stats?.videosUploaded ?? 0;
   const displayLevel = stats?.level ?? 0;
@@ -50,7 +49,9 @@ export default function HomeScreen() {
   const displayExp = stats?.exp ?? 0;
   const displayCurrentLevelExp = stats?.currentLevelExp ?? 0;
   const displayNextLevelExp = stats?.nextLevelExp ?? 50;
-  const displaySport    = activeSport ?? 'Basketball';
+  const displaySport    = activeSport
+    ? activeSport.charAt(0).toUpperCase() + activeSport.slice(1)
+    : 'Basketball';
   const displayEmoji    = SPORT_EMOJI[displaySport] ?? '🏀';
   const equippedAvatar  = getAvatarById(customization.equippedAvatarId);
   const equippedBanner  = getBannerById(customization.equippedBannerId);
