@@ -11,8 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/auth-context";
-import { useDatabaseLiveValue } from "@/hooks/use-database";
+import { useApiQuery } from "@/hooks/use-api";
 import type { AnalysisSession } from "@/types/analysis";
 import {
   getPhaseKeys,
@@ -21,7 +20,15 @@ import {
   isAnalysisPhaseKey,
   scoreToGrade,
 } from "@/utils/analysis";
-import { formatUserId } from "@/utils/user";
+
+type SessionFull = {
+  id: string;
+  sport?: string;
+  overall_score?: number | null;
+  source?: AnalysisSession["source"];
+  analysis: AnalysisSession["analysis"];
+  created_at?: string;
+};
 
 const ORANGE = "#E85D04";
 const BG = "#181818";
@@ -52,25 +59,18 @@ function ScoreRing({ score, size = 52 }: { score: number; size?: number }) {
 
 export default function ShotBreakdownScreen() {
   const params = useLocalSearchParams<{ sessionId?: string }>();
-  const { user } = useAuth();
-  const userId = formatUserId(user?.sub);
 
   const requestedSessionId =
     typeof params.sessionId === "string" ? params.sessionId : null;
 
-  const { value: activeSessionId, isLoading: isActiveSessionLoading } =
-    useDatabaseLiveValue<string>(`users/${userId}/analysis/activeSessionId`);
+  const key = requestedSessionId
+    ? `session:${requestedSessionId}`
+    : "session:active";
+  const path = requestedSessionId
+    ? `/me/sessions/${requestedSessionId}`
+    : "/me/sessions/active";
 
-  const resolvedSessionId = requestedSessionId ?? activeSessionId;
-
-  const { value: session, isLoading: isSessionLoading } =
-    useDatabaseLiveValue<AnalysisSession>(
-      resolvedSessionId
-        ? `users/${userId}/analysisSessions/${resolvedSessionId}`
-        : null,
-    );
-
-  const isLoading = isActiveSessionLoading || isSessionLoading;
+  const { value: session, isLoading } = useApiQuery<SessionFull | null>(key, path);
 
   if (isLoading) {
     return (
@@ -130,7 +130,7 @@ export default function ShotBreakdownScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>SHOT BREAKDOWN</Text>
           <Text style={styles.headerSub}>
-            Saved {new Date(session.createdAt).toLocaleString()}
+            Saved {new Date(session.created_at ?? Date.now()).toLocaleString()}
           </Text>
         </View>
 

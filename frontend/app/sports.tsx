@@ -1,4 +1,3 @@
-import { ref, set } from 'firebase/database';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -11,7 +10,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { db } from '@/config/firebase';
 import {
   ACCENT_SURFACE_ALT,
   APP_BORDER,
@@ -25,8 +23,7 @@ import {
   PURPLE,
   WHITE,
 } from '@/constants/colors';
-import { useAuth } from '@/context/auth-context';
-import { useDatabaseLiveValue } from '@/hooks/use-database';
+import { invalidate, useApiMutation, useApiQuery } from '@/hooks/use-api';
 
 const SPORTS = [
   { name: 'Basketball', emoji: '🏀' },
@@ -38,35 +35,32 @@ const SPORTS = [
   { name: 'Swimming',   emoji: '🏊' },
 ];
 
-function sanitizeUid(sub: string) {
-  return sub.replace(/[.#$[\]|]/g, '_');
-}
+type SportsState = { active: string | null; selected: string[] };
 
 export default function SportsScreen() {
-  const { user } = useAuth();
-  const userId = user?.sub ? sanitizeUid(user.sub) : 'anonymous';
+  const { value: sportsState } = useApiQuery<SportsState>('sports', '/me/sports');
+  const activeSport = sportsState?.active ?? null;
+  const selectedSports = new Set(sportsState?.selected ?? []);
 
-  const { value: activeSport }    = useDatabaseLiveValue<string>(`users/${userId}/sports/active`);
-  const { value: selectedSports } = useDatabaseLiveValue<Record<string, boolean>>(`users/${userId}/sports/selected`);
+  const addSport = useApiMutation<SportsState>('/me/sports/selected', 'POST');
+  const setActive = useApiMutation<SportsState>('/me/sports/active', 'PUT');
 
   const [confirmSport, setConfirmSport] = useState<{ name: string; emoji: string } | null>(null);
 
   async function handleSportPress(sport: { name: string; emoji: string }) {
-    if (selectedSports?.[sport.name]) {
-      // Switch active sport to this one
-      await set(ref(db, `users/${userId}/sports/active`), sport.name);
+    const s = sport.name.toLowerCase();
+    if (selectedSports.has(sport.name) || selectedSports.has(s)) {
+      await setActive.mutate({ sport: s });
+      invalidate('sports');
     } else {
-      // Prompt to add
       setConfirmSport(sport);
     }
   }
 
   async function handleAddSport() {
     if (!confirmSport) return;
-    await set(ref(db, `users/${userId}/sports/selected/${confirmSport.name}`), true);
-    if (!activeSport) {
-      await set(ref(db, `users/${userId}/sports/active`), confirmSport.name);
-    }
+    await addSport.mutate({ sport: confirmSport.name.toLowerCase() });
+    invalidate('sports');
     setConfirmSport(null);
   }
 
@@ -91,8 +85,9 @@ export default function SportsScreen() {
         {/* ── Sport list card ── */}
         <View style={styles.listCard}>
           {SPORTS.map((sport, index) => {
-            const isSelected = !!selectedSports?.[sport.name];
-            const isActive   = activeSport === sport.name;
+            const s = sport.name.toLowerCase();
+            const isSelected = selectedSports.has(sport.name) || selectedSports.has(s);
+            const isActive = activeSport === s;
             return (
               <TouchableOpacity
                 key={sport.name}

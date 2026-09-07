@@ -1,18 +1,14 @@
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
+/**
+ * B1 removed Firebase. Leaderboard, friends, social inbox and profile
+ * cosmetics return in sub-project B2. Until then any access throws.
+ */
+const message = "persistence for this feature returns in B2";
 
-import { requireRuntimeConfig } from "@/config/runtime";
-
-const firebaseConfig = {
-  apiKey: requireRuntimeConfig("firebaseApiKey"),
-  authDomain: requireRuntimeConfig("firebaseAuthDomain"),
-  databaseURL: requireRuntimeConfig("firebaseDatabaseUrl"),
-  projectId: requireRuntimeConfig("firebaseProjectId"),
-  storageBucket: requireRuntimeConfig("firebaseStorageBucket"),
-  messagingSenderId: requireRuntimeConfig("firebaseMessagingSenderId"),
-  appId: requireRuntimeConfig("firebaseAppId"),
-};
-
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
-export const db = getDatabase(app);
+export const db = new Proxy(
+  {},
+  {
+    get() {
+      throw new Error(message);
+    },
+  },
+) as unknown as never;

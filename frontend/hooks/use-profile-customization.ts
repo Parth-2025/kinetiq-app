@@ -1,48 +1,19 @@
-import { useEffect, useRef } from 'react';
-
 import {
-  INITIAL_PROFILE_CUSTOMIZATION,
-  type ProfileCustomizationState,
   normalizeProfileCustomization,
+  type ProfileCustomizationState,
 } from '@/components/profile-cosmetics';
-import { useDatabaseLiveValue, useDatabaseWrite } from '@/hooks/use-database';
-import { formatUserId } from '@/utils/user';
 
-export function useProfileCustomization(userSub: string | null | undefined) {
-  const path = userSub ? `users/${formatUserId(userSub)}/profileCustomization` : null;
-  const hasInitialized = useRef(false);
-  const {
-    value,
-    isLoading,
-    error,
-  } = useDatabaseLiveValue<ProfileCustomizationState>(path);
-  const {
-    write,
-    isLoading: isSaving,
-    error: writeError,
-  } = useDatabaseWrite<ProfileCustomizationState>(path);
-
-  useEffect(() => {
-    if (!path) {
-      hasInitialized.current = false;
-      return;
-    }
-
-    if (isLoading || value !== null || hasInitialized.current) {
-      return;
-    }
-
-    hasInitialized.current = true;
-    write(INITIAL_PROFILE_CUSTOMIZATION).catch(() => {
-      hasInitialized.current = false;
-    });
-  }, [isLoading, path, value, write]);
-
+/**
+ * B2: profile cosmetics persistence returns in sub-project B2. Until then this
+ * hook is a safe no-op that hands back the default customization and swallows
+ * any save attempt.
+ */
+export function useProfileCustomization(_userSub: string | null | undefined) {
   return {
-    customization: normalizeProfileCustomization(value),
-    isLoading,
-    isSaving,
-    error: error ?? writeError,
-    saveCustomization: write,
+    customization: normalizeProfileCustomization(null),
+    isLoading: false,
+    isSaving: false,
+    error: null as Error | null,
+    saveCustomization: async (_next?: ProfileCustomizationState) => {},
   };
 }

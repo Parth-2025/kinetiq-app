@@ -1,14 +1,24 @@
-import { useDatabaseLiveValue } from "@/hooks/use-database";
-import { type AppUserStats, getUserStatsPath } from "@/services/user-stats";
-import { formatUserId } from "@/utils/user";
+import { useApiQuery } from "@/hooks/use-api";
+
+export type AppUserStats = {
+  videosUploaded: number;
+  shotsAnalyzed: number;
+  totalScore: number;
+  avgScore: number;
+  bestScore: number;
+  latestScore: number;
+  exp: number;
+  level: number;
+  progressPct: number;
+  currentLevelExp: number;
+  nextLevelExp: number;
+};
 
 export function useUserStats(userSub: string | null | undefined) {
-  const path = userSub ? getUserStatsPath(formatUserId(userSub)) : null;
-  const { value, isLoading, error } = useDatabaseLiveValue<AppUserStats>(path);
-
-  return {
-    stats: value,
-    isLoading,
-    error,
-  };
+  const key = userSub ? "stats" : null;
+  const { value, isLoading, error } = useApiQuery<AppUserStats>(
+    key,
+    key ? "/me/stats" : null,
+  );
+  return { stats: value, isLoading, error };
 }

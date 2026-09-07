@@ -21,10 +21,10 @@ import {
   PURPLE,
   WHITE_15,
 } from '@/constants/colors';
+import { ApiError, apiFetch } from '@/config/api';
 import { useAuth } from '@/context/auth-context';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import {
-  claimUsername,
   getUsernameValidationMessage,
   normalizeUsernameInput,
 } from '@/services/user-profile';
@@ -63,15 +63,32 @@ export default function UsernameOnboardingScreen() {
     setError(null);
 
     try {
-      await claimUsername({
-        userSub: user.sub,
-        username: nextUsername,
-        displayName: user.name,
-        email: user.email,
+      const { available } = await apiFetch<{ available: boolean }>(
+        `/me/username-available?u=${encodeURIComponent(nextUsername)}`,
+      );
+
+      if (!available) {
+        setError('That username is taken.');
+        return;
+      }
+
+      await apiFetch('/me/profile', {
+        method: 'PATCH',
+        body: { username: nextUsername },
       });
       router.replace('/(tabs)');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'We could not save your username.');
+      if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setError('That username is taken.');
+        } else if (err.status === 400) {
+          setError(err.detail || 'That username format is not allowed.');
+        } else {
+          setError('We could not save your username.');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'We could not save your username.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -115,7 +132,7 @@ export default function UsernameOnboardingScreen() {
             />
           </View>
           <Text style={styles.helper}>
-            3-20 characters. Use lowercase letters, numbers, periods, or underscores.
+            3-20 characters. Use lowercase letters, numbers, or underscores.
           </Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
 

@@ -42,12 +42,17 @@ export async function apiFetch<T = unknown>(
 
   if (res.status === 204) return undefined as T;
   const text = await res.text();
-  const parsed = text ? JSON.parse(text) : undefined;
+  let parsed: unknown;
+  try {
+    parsed = text ? JSON.parse(text) : undefined;
+  } catch {
+    parsed = undefined;
+  }
   if (!res.ok) {
     const detail =
       parsed && typeof parsed === "object" && "detail" in parsed
         ? String((parsed as { detail: unknown }).detail)
-        : res.statusText;
+        : res.statusText || text.slice(0, 200);
     throw new ApiError(res.status, detail);
   }
   return parsed as T;
