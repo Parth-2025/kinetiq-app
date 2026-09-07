@@ -1,4 +1,4 @@
-import { ANALYSIS_PHASE_ORDER, type AnalysisPhaseKey, type AngleMeasurement } from "@/types/analysis";
+import { ANALYSIS_PHASE_ORDER, type AnalysisPhaseKey } from "@/types/analysis";
 
 const PHASE_LABELS: Record<AnalysisPhaseKey, string> = {
   ready_position: "READY",
@@ -31,28 +31,8 @@ export function scoreToGrade(score: number) {
   return "C-";
 }
 
-export function getScoreColor(score: number) {
-  if (score >= 90) return "#3DD9C0";
-  if (score >= 75) return "#E8B840";
-  return "#FF6B6B";
-}
-
 export function formatAngleLabel(label: string) {
   return label
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-export function splitAngleMeasurements(measurements: Record<string, AngleMeasurement>) {
-  const entries = Object.entries(measurements);
-
-  const working = entries
-    .filter(([, value]) => value.score >= 85)
-    .map(([label, value]) => `${formatAngleLabel(label)}: ${Math.round(value.value)}° (${value.ideal})`);
-
-  const improve = entries
-    .filter(([, value]) => value.score < 85)
-    .map(([label, value]) => `${formatAngleLabel(label)}: ${Math.round(value.value)}° (${value.ideal})`);
-
-  return { working, improve };
 }

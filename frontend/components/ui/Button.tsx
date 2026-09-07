@@ -58,7 +58,7 @@ export function Button({
           justifyContent: "center",
           gap: t.space.s,
           backgroundColor: bg,
-          alignSelf: fullWidth ? "stretch" : "flex-start",
+          alignSelf: fullWidth ? "stretch" : undefined,
           opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
         },
         border,

@@ -46,7 +46,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View style={{ gap: t.space.m }}>
+        <View style={{ gap: t.space.m, alignItems: "center" }}>
           {authError ? (
             <InlineAlert tone="danger" title="Verification required" message={authError} />
           ) : null}

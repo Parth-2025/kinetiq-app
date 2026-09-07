@@ -27,10 +27,7 @@ function BasketballUpload({ activeSport }: { activeSport: string | null }) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const submitAsset = async (
-    asset: ImagePicker.ImagePickerAsset,
-    source: VideoSource,
-  ) => {
+  const submitAsset = async (asset: ImagePicker.ImagePickerAsset) => {
     if (!asset || asset.type !== "video") {
       setErrorMsg("Please choose a video file to analyze.");
       return;
@@ -102,7 +99,7 @@ function BasketballUpload({ activeSport }: { activeSport: string | null }) {
         return;
       }
 
-      await submitAsset(cameraResult.assets[0], source);
+      await submitAsset(cameraResult.assets[0]);
       return;
     }
 
@@ -124,7 +121,7 @@ function BasketballUpload({ activeSport }: { activeSport: string | null }) {
       return;
     }
 
-    await submitAsset(pickerResult.assets[0], source);
+    await submitAsset(pickerResult.assets[0]);
   };
 
   const sportName = activeSport ?? "basketball";

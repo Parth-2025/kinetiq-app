@@ -27,7 +27,7 @@ export function ScoreRing({
   const arc = toneForScore(clamped);
 
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center", gap: 2 }}>
       <Svg
         width={size}
         height={size}

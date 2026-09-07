@@ -14,7 +14,7 @@ type Props = {
 
 export function Screen({ children, scroll, appBar, pad = true, contentStyle }: Props) {
   const t = useTheme();
-  const padStyle = pad ? { paddingHorizontal: t.space.l } : null;
+  const padStyle = pad ? { paddingHorizontal: t.space.l, paddingTop: t.space.l } : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.bg }} edges={["top"]}>
@@ -25,14 +25,14 @@ export function Screen({ children, scroll, appBar, pad = true, contentStyle }: P
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             padStyle,
-            { paddingTop: t.space.l, paddingBottom: t.space.xxxl },
+            { paddingBottom: t.space.xxxl },
             contentStyle,
           ]}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[{ flex: 1 }, padStyle, { paddingTop: t.space.l }, contentStyle]}>
+        <View style={[{ flex: 1 }, padStyle, contentStyle]}>
           {children}
         </View>
       )}

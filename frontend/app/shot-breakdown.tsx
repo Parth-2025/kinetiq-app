@@ -49,7 +49,7 @@ export default function ShotBreakdownScreen() {
   if (isLoading) {
     return (
       <Screen appBar={appBar}>
-        <View style={{ alignItems: "center", gap: t.space.m, paddingTop: t.space.xxxl }}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: t.space.m }}>
           <ActivityIndicator size="large" color={t.color.accent} />
           <Text variant="body1" color="textSecondary">
             Loading analysis…

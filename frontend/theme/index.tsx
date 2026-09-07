@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 import { makeColors, type ColorSet } from "./tokens";
 import { TYPE, Fonts } from "./typography";

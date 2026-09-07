@@ -76,7 +76,7 @@ export default function SportsScreen() {
           return (
             <ListItem
               key={s.key}
-              leading="basketball"
+              leading={isBasketball ? "basketball" : undefined}
               title={s.name}
               divider={i < SPORTS.length - 1}
               onPress={isBasketball ? handleBasketballPress : undefined}
