@@ -1,10 +1,10 @@
-import { ComingSoon } from '@/components/coming-soon';
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Screen } from "@/components/ui/Screen";
 
 export default function MessageThreadScreen() {
   return (
-    <ComingSoon
-      title="Messaging is coming back soon"
-      body="Conversations return in the next KinetiQ update."
-    />
+    <Screen>
+      <EmptyState icon="person" title="Conversation" body="Coming in a future update." />
+    </Screen>
   );
 }
