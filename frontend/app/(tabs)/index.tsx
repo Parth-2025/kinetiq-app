@@ -1,325 +1,170 @@
-import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from "expo-router";
+import { Pressable, View } from "react-native";
 
-import {
-  AvatarArtwork,
-  BannerArtwork,
-  getAvatarById,
-  getBannerById,
-} from '@/components/profile-cosmetics';
-import {
-  ACCENT_SURFACE,
-  APP_SHADOW,
-  APP_TRACK,
-  DANGER,
-  HOME_BG,
-  HOME_CARD,
-  HOME_LABEL,
-  HOME_TEXT,
-  PURPLE,
-} from '@/constants/colors';
-import { useAuth } from '@/context/auth-context';
-import { useApiQuery } from '@/hooks/use-api';
-import { useProfileCustomization } from '@/hooks/use-profile-customization';
-import { useUserProfile } from '@/hooks/use-user-profile';
-import { useUserStats } from '@/hooks/use-user-stats';
+import { AppBar } from "@/components/ui/AppBar";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { ListItem } from "@/components/ui/ListItem";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Screen } from "@/components/ui/Screen";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { StatGrid } from "@/components/ui/StatGrid";
+import { Text } from "@/components/ui/Text";
+import { Icon } from "@/components/icons/Icon";
+import { useAuth } from "@/context/auth-context";
+import { useApiQuery } from "@/hooks/use-api";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { useUserStats } from "@/hooks/use-user-stats";
+import { useTheme } from "@/theme";
+import { scoreToGrade } from "@/utils/analysis";
 
-const SPORT_EMOJI: Record<string, string> = {
-  Basketball: '🏀',
-  Soccer:     '⚽',
-  Tennis:     '🎾',
-  Baseball:   '⚾',
-  Football:   '🏈',
-  Volleyball: '🏐',
-  Swimming:   '🏊',
+type SessionMeta = {
+  id: string;
+  sport: string;
+  overall_score: number | null;
+  created_at: string;
 };
 
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
-  const { customization } = useProfileCustomization(user?.sub);
+  const t = useTheme();
+  const { user } = useAuth();
   const { profile } = useUserProfile(user?.sub);
-  const { stats } = useUserStats(user?.sub);
-  const { value: sportsState } = useApiQuery<{ active: string | null }>('sports', '/me/sports');
-  const activeSport = sportsState?.active ?? null;
+  const { stats, isLoading: statsLoading } = useUserStats(user?.sub);
+  const { value: sportsState } = useApiQuery<{ active: string | null }>("sports", "/me/sports");
+  const { value: sessions, isLoading: sessionsLoading } = useApiQuery<SessionMeta[]>(
+    "sessions",
+    "/me/sessions?limit=4",
+  );
 
-  const displayVideos = stats?.videosUploaded ?? 0;
-  const displayLevel = stats?.level ?? 0;
-  const displayProgress = stats?.progressPct ?? 0;
-  const displayExp = stats?.exp ?? 0;
-  const displayCurrentLevelExp = stats?.currentLevelExp ?? 0;
-  const displayNextLevelExp = stats?.nextLevelExp ?? 50;
-  const displaySport    = activeSport
-    ? activeSport.charAt(0).toUpperCase() + activeSport.slice(1)
-    : 'Basketball';
-  const displayEmoji    = SPORT_EMOJI[displaySport] ?? '🏀';
-  const equippedAvatar  = getAvatarById(customization.equippedAvatarId);
-  const equippedBanner  = getBannerById(customization.equippedBannerId);
-
-  const username = profile?.username ? `@${profile.username}` : '@you';
+  const activeSport = sportsState?.active ?? "basketball";
+  const sportLabel = activeSport.charAt(0).toUpperCase() + activeSport.slice(1);
+  const level = stats?.level ?? 0;
+  const progress = (stats?.progressPct ?? 0) / 100;
+  const toNextLevel = (stats?.nextLevelExp ?? 0) - (stats?.exp ?? 0);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Profile ── */}
-        <View style={styles.profileSection}>
-          <Text style={styles.username}>{username}</Text>
-          <View style={styles.profileCard}>
-            <BannerArtwork banner={equippedBanner} height={132} />
-            <View style={styles.avatarWrapper}>
-              <AvatarArtwork avatar={equippedAvatar} size={92} />
-            </View>
-            <View style={styles.profileMeta}>
-              <View>
-                <Text style={styles.profileName}>
-                  {profile?.displayName ?? user?.name ?? 'Rim Ready Player'}
-                </Text>
-                <Text style={styles.profileCustomization}>
-                  {equippedAvatar.name} avatar • {equippedBanner.name} banner
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.shopPill}
-                activeOpacity={0.7}
-                onPress={() => router.push('/shop')}
-              >
-                <Text style={styles.shopPillText}>Open Shop</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+    <Screen
+      scroll
+      appBar={
+        <AppBar
+          title="KinetiQ"
+          trailing={
+            <Pressable
+              onPress={() => router.push("/(tabs)/profile")}
+              hitSlop={8}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: t.color.accentSubtle,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="person" size={18} color="accent" />
+            </Pressable>
+          }
+        />
+      }
+    >
+      <View style={{ gap: t.space.l }}>
+        <View style={{ gap: t.space.xs }}>
+          <Text variant="caption1" color="textSecondary">
+            {profile?.username ? `@${profile.username}` : "Welcome back"}
+          </Text>
+          <Text variant="title2">Your progress</Text>
         </View>
 
-        {/* ── Stats Row ── */}
-        <View style={styles.statsRow}>
-          <View style={[styles.card, styles.statCard]}>
-            <Text style={styles.cardLabel}>Videos</Text>
-            <Text style={styles.statValue}>{displayVideos}</Text>
-          </View>
-          <View style={[styles.card, styles.statCard]}>
-            <Text style={styles.cardLabel}>Level</Text>
-            <Text style={styles.statValue}>{displayLevel}</Text>
-          </View>
-        </View>
+        {statsLoading ? (
+          <Skeleton width="100%" height={120} />
+        ) : (
+          <StatGrid
+            items={[
+              { value: String(level), label: "Level" },
+              { value: String(stats?.videosUploaded ?? 0), label: "Videos" },
+              { value: String(stats?.bestScore ?? 0), label: "Best score" },
+              { value: (stats?.avgScore ?? 0).toFixed(1), label: "Avg score" },
+            ]}
+          />
+        )}
 
-        {/* ── Progress Card ── */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Progress to Level {displayLevel + 1}</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${displayProgress}%` }]} />
-          </View>
-          <Text style={styles.progressPct}>
-            {displayExp - displayCurrentLevelExp}/{displayNextLevelExp - displayCurrentLevelExp} XP • {displayProgress}%
+        <View style={{ gap: t.space.s }}>
+          <ProgressBar value={progress} />
+          <Text variant="caption1" color="textSecondary">
+            {toNextLevel} XP to level {level + 1}
           </Text>
         </View>
 
-        {/* ── Active Sport Card ── */}
-        <TouchableOpacity style={[styles.card, styles.sportCard]} activeOpacity={0.7} onPress={() => router.push('/sports')}>
-          <View style={styles.sportLeft}>
-            <Text style={styles.cardLabel}>Active Sport</Text>
-            <View style={styles.sportRow}>
-              <Text style={styles.sportEmoji}>{displayEmoji}</Text>
-              <Text style={styles.sportName}>{displaySport}</Text>
+        <Card>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: t.space.m }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text variant="caption1" color="textSecondary">
+                Active sport
+              </Text>
+              <Text variant="subtitle1">{sportLabel}</Text>
             </View>
+            <Button label="Change" appearance="subtle" size="sm" onPress={() => router.push("/sports")} />
           </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
+        </Card>
 
-        {/* ── Log Out ── */}
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={logout}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Log out"
-        >
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+        <View style={{ gap: t.space.s }}>
+          <Text variant="subtitle1">Recent</Text>
+          {sessionsLoading ? (
+            <View style={{ gap: t.space.s }}>
+              <Skeleton width="100%" height={56} />
+              <Skeleton width="100%" height={56} />
+            </View>
+          ) : sessions && sessions.length > 0 ? (
+            sessions.map((s, i) => (
+              <ListItem
+                key={s.id}
+                leading="history"
+                title={`${Math.round(s.overall_score ?? 0)} · ${scoreToGrade(
+                  Math.round(s.overall_score ?? 0),
+                )}`}
+                subtitle={new Date(s.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                trailing="chevron"
+                divider={i < sessions.length - 1}
+                onPress={() =>
+                  router.push({ pathname: "/shot-breakdown", params: { sessionId: s.id } })
+                }
+              />
+            ))
+          ) : (
+            <Text variant="body1" color="textSecondary">
+              No analyses yet — upload your first shot.
+            </Text>
+          )}
+        </View>
+
+        <Card onPress={() => router.push("/(tabs)/upload")}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: t.space.m }}>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: t.color.accent,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="arrow-upload" size={22} color="onAccent" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="body1Strong">Analyze a new shot</Text>
+              <Text variant="caption1" color="textSecondary">
+                Record or upload a clip to get your breakdown.
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="textSecondary" />
+          </View>
+        </Card>
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: HOME_BG,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 32,
-    gap: 14,
-  },
-
-  // Profile
-  profileSection: {
-    paddingVertical: 16,
-    gap: 16,
-  },
-  username: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: HOME_TEXT,
-    letterSpacing: -0.3,
-    textAlign: 'center',
-  },
-  profileCard: {
-    borderRadius: 28,
-    backgroundColor: HOME_CARD,
-    padding: 12,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 5,
-  },
-  avatarWrapper: {
-    position: 'absolute',
-    left: 24,
-    top: 78,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: HOME_CARD,
-    padding: 4,
-  },
-  profileMeta: {
-    marginTop: 46,
-    paddingHorizontal: 8,
-    paddingBottom: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  profileName: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: HOME_TEXT,
-    letterSpacing: -0.4,
-  },
-  profileCustomization: {
-    marginTop: 4,
-    fontSize: 14,
-    color: HOME_LABEL,
-    fontWeight: '600',
-  },
-  shopPill: {
-    backgroundColor: ACCENT_SURFACE,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  shopPillText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: PURPLE,
-  },
-
-  // Cards
-  card: {
-    backgroundColor: HOME_CARD,
-    borderRadius: 18,
-    padding: 18,
-    shadowColor: APP_SHADOW,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardLabel: {
-    fontSize: 13,
-    color: HOME_LABEL,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  statCard: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: HOME_TEXT,
-    letterSpacing: -0.5,
-  },
-
-  // Progress
-  progressTrack: {
-    height: 10,
-    backgroundColor: APP_TRACK,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: PURPLE,
-    borderRadius: 6,
-  },
-  progressPct: {
-    fontSize: 13,
-    color: HOME_LABEL,
-    fontWeight: '500',
-    textAlign: 'right',
-  },
-
-  // Active Sport
-  sportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sportLeft: {
-    gap: 4,
-  },
-  sportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sportEmoji: {
-    fontSize: 22,
-  },
-  sportName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: HOME_TEXT,
-    letterSpacing: -0.3,
-  },
-  chevron: {
-    fontSize: 26,
-    color: HOME_LABEL,
-    fontWeight: '300',
-  },
-
-  // Logout
-  logoutBtn: {
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: DANGER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  logoutText: {
-    color: DANGER,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
