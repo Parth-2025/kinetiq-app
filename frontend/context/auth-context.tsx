@@ -10,8 +10,9 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 
-import { registerTokenAccessor } from "@/config/api";
+import { registerTokenAccessor, registerUnauthorizedHandler } from "@/config/api";
 import { auth0Config } from "@/config/auth0";
+import { clearApiCache } from "@/hooks/use-api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -189,6 +190,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   tokenRef.current = accessToken;
   useEffect(() => {
     registerTokenAccessor(() => tokenRef.current);
+    registerUnauthorizedHandler(() => {
+      setUser(null);
+      setAccessToken(null);
+      if (Platform.OS === "web") clearWebSession();
+      clearApiCache();
+    });
   }, []);
 
   useEffect(() => {
@@ -366,6 +373,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS === "web") {
       clearWebSession();
       setAccessToken(null);
+      clearApiCache();
       const logoutUrl =
         `https://${auth0Config.domain}/v2/logout` +
         `?client_id=${encodeURIComponent(auth0Config.clientId)}` +
@@ -385,6 +393,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await WebBrowser.openAuthSessionAsync(logoutUrl, returnTo);
       setUser(null);
       setAccessToken(null);
+      clearApiCache();
     } finally {
       setIsLoading(false);
     }

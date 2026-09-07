@@ -16,6 +16,11 @@ export function invalidate(keyPrefix: string): void {
   }
 }
 
+export function clearApiCache(): void {
+  cache.clear();
+  for (const [, set] of listeners) set.forEach((fn) => fn());
+}
+
 function subscribe(key: string, fn: () => void): () => void {
   if (!listeners.has(key)) listeners.set(key, new Set());
   listeners.get(key)!.add(fn);
@@ -45,7 +50,10 @@ export function useApiQuery<T>(key: string | null, path: string | null) {
         setValue(v);
         setError(null);
       })
-      .catch((e) => setError(e instanceof Error ? e : new Error(String(e))))
+      .catch((e) => {
+        setValue(null);
+        setError(e instanceof Error ? e : new Error(String(e)));
+      })
       .finally(() => setIsLoading(false));
   }, [key]);
 

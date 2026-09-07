@@ -29,6 +29,13 @@ uvicorn main:app --reload --port 8000
 
 `/me/*` endpoints require `Authorization: Bearer <Auth0 access token>`.
 
+| var | purpose |
+|---|---|
+| `KINETIQ_DATABASE_URL` | Postgres DSN (`postgresql+psycopg://…`) |
+| `KINETIQ_AUTH0_DOMAIN` | Auth0 tenant domain for `/userinfo` token validation. **If unset, every `/me/*` request 401s.** |
+| `KINETIQ_TEST_DATABASE_URL` | test DB DSN (tests only) |
+| `KINETIQ_CORS_ORIGINS` | JSON list of allowed origins |
+
 ### Configuration (env, prefix `KINETIQ_`)
 
 | Var | Default | Meaning |

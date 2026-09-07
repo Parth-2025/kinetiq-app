@@ -17,6 +17,12 @@ export function registerTokenAccessor(fn: () => string | null): void {
   tokenAccessor = fn;
 }
 
+let unauthorizedHandler: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(fn: () => void): void {
+  unauthorizedHandler = fn;
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   init?: { method?: string; body?: unknown },
@@ -53,6 +59,7 @@ export async function apiFetch<T = unknown>(
       parsed && typeof parsed === "object" && "detail" in parsed
         ? String((parsed as { detail: unknown }).detail)
         : res.statusText || text.slice(0, 200);
+    if (res.status === 401) unauthorizedHandler?.();
     throw new ApiError(res.status, detail);
   }
   return parsed as T;

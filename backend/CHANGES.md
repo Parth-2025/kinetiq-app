@@ -170,3 +170,12 @@ by `tests/test_layering.py`).
   `KINETIQ_TEST_DATABASE_URL` (tests). Migrations: `alembic upgrade head`.
 - Local: `docker compose -f backend/docker-compose.yml up -d`.
 - Deploy: `render.yaml` (Render free web service) + Neon free Postgres.
+
+Known limitations (B2):
+
+- `POST /me/sessions` trusts `analysis.overall_score` from the client — B2's
+  leaderboard must recompute the score server-side or bind sessions to an
+  analyze-job id rather than accepting a client-supplied number.
+- `/userinfo` token validation does not check `aud`/`iss`, so any token issued
+  by the tenant is accepted — B2 should move to JWT + JWKS with an audience
+  check.

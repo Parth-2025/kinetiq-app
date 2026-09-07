@@ -17,6 +17,7 @@ def _first_parties(pyfile: Path) -> set[str]:
 
 
 def test_analyzer_does_not_import_persistence():
+    assert ANALYZER.is_dir()
     offenders = {}
     for py in ANALYZER.rglob("*.py"):
         bad = _first_parties(py) & FORBIDDEN

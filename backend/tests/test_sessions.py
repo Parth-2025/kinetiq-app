@@ -57,3 +57,13 @@ def test_create_rejects_non_object_blob(client, as_user):
     as_user()
     r = client.post("/me/sessions", json={"sport": "basketball", "source": [], "analysis": {}})
     assert r.status_code == 422 or r.status_code == 400
+
+
+def test_create_rejects_oversized_blob(client, as_user):
+    as_user()
+    r = client.post("/me/sessions", json={
+        "sport": "basketball",
+        "source": {},
+        "analysis": {"pose_gif": "x" * (4 * 1024 * 1024)},
+    })
+    assert r.status_code == 413

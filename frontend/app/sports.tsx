@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -50,8 +51,12 @@ export default function SportsScreen() {
   async function handleSportPress(sport: { name: string; emoji: string }) {
     const s = sport.name.toLowerCase();
     if (selectedSports.has(sport.name) || selectedSports.has(s)) {
-      await setActive.mutate({ sport: s });
-      invalidate('sports');
+      try {
+        await setActive.mutate({ sport: s });
+        invalidate('sports');
+      } catch {
+        Alert.alert("Couldn't update sports", 'Please check your connection and try again.');
+      }
     } else {
       setConfirmSport(sport);
     }
@@ -59,9 +64,14 @@ export default function SportsScreen() {
 
   async function handleAddSport() {
     if (!confirmSport) return;
-    await addSport.mutate({ sport: confirmSport.name.toLowerCase() });
-    invalidate('sports');
-    setConfirmSport(null);
+    try {
+      await addSport.mutate({ sport: confirmSport.name.toLowerCase() });
+      invalidate('sports');
+    } catch {
+      Alert.alert("Couldn't update sports", 'Please check your connection and try again.');
+    } finally {
+      setConfirmSport(null);
+    }
   }
 
   return (

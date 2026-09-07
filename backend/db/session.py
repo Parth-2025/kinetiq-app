@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 
+from fastapi import HTTPException
 from sqlalchemy import create_engine
+from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from settings import settings
@@ -14,6 +16,9 @@ def get_db() -> Iterator[Session]:
     try:
         yield db
         db.commit()
+    except (OperationalError, InterfaceError) as exc:
+        db.rollback()
+        raise HTTPException(503, "database unavailable") from exc
     except Exception:
         db.rollback()
         raise

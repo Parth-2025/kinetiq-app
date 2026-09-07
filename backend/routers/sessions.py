@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,6 +12,8 @@ from db.models import AnalysisSession, User
 from db.session import get_db
 
 router = APIRouter()
+
+_MAX_BLOB_BYTES = 3 * 1024 * 1024  # 3 MB combined
 
 
 class SessionCreate(BaseModel):
@@ -36,6 +39,8 @@ def _full(s: AnalysisSession) -> dict:
 def create_session(
     body: SessionCreate, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> dict:
+    if len(json.dumps(body.source)) + len(json.dumps(body.analysis)) > _MAX_BLOB_BYTES:
+        raise HTTPException(413, "analysis payload too large")
     raw = body.analysis.get("overall_score")
     score = float(raw) if isinstance(raw, int | float) else None
     s = AnalysisSession(
