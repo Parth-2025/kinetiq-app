@@ -108,11 +108,11 @@ export default function PhaseDetailScreen() {
                   {f.uri ? (
                     <Image
                       source={{ uri: `data:image/png;base64,${f.uri}` }}
-                      style={{ width: "100%", height: 170, borderRadius: t.radius.l, backgroundColor: t.color.layerAlt }}
-                      contentFit="cover"
+                      style={{ width: "100%", height: 220, borderRadius: t.radius.l, backgroundColor: t.color.layerAlt }}
+                      contentFit="contain"
                     />
                   ) : (
-                    <View style={{ height: 170, borderRadius: t.radius.l, backgroundColor: t.color.layerAlt }} />
+                    <View style={{ height: 220, borderRadius: t.radius.l, backgroundColor: t.color.layerAlt }} />
                   )}
                   <Text variant="caption1" color="textSecondary" align="center">
                     {f.label}
@@ -126,17 +126,23 @@ export default function PhaseDetailScreen() {
         {measureEntries.length ? (
           <View style={{ gap: t.space.s }}>
             <Text variant="subtitle1">Measurements</Text>
-            {measureEntries.map(([label, value], i) => (
-              <ListItem
-                key={label}
-                title={formatAngleLabel(label)}
-                subtitle={`Ideal ${value.ideal}`}
-                trailing={
-                  <Chip label={`${Math.round(value.value)}°`} tone={measureTone(value.score)} />
-                }
-                divider={i < measureEntries.length - 1}
-              />
-            ))}
+            {measureEntries.map(([label, value], i) => {
+              // Only angle metrics carry a degree unit; ratio metrics (e.g. hip
+              // tilt, ideal "0–0.04") are shown as a 2dp number, not "0°".
+              const isAngle = value.ideal.includes("°");
+              const shown = isAngle
+                ? `${Math.round(value.value)}°`
+                : value.value.toFixed(2);
+              return (
+                <ListItem
+                  key={label}
+                  title={formatAngleLabel(label)}
+                  subtitle={`Ideal ${value.ideal}`}
+                  trailing={<Chip label={shown} tone={measureTone(value.score)} />}
+                  divider={i < measureEntries.length - 1}
+                />
+              );
+            })}
           </View>
         ) : null}
 
