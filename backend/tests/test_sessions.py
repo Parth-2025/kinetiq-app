@@ -64,6 +64,6 @@ def test_create_rejects_oversized_blob(client, as_user):
     r = client.post("/me/sessions", json={
         "sport": "basketball",
         "source": {},
-        "analysis": {"pose_gif": "x" * (4 * 1024 * 1024)},
+        "analysis": {"pose_gif": "x" * (26 * 1024 * 1024)},
     })
     assert r.status_code == 413
