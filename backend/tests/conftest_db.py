@@ -1,10 +1,12 @@
 import os
 
 import pytest
+from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
+from alembic import command
 from settings import settings
 
 
@@ -36,7 +38,9 @@ def pg_engine():
         pytest.skip(
             "Postgres not available — run: docker compose -f backend/docker-compose.yml up -d"
         )
-    # migrations are applied by the test task that needs models (Task 2 adds the call)
+    cfg = Config("alembic.ini")
+    cfg.set_main_option("sqlalchemy.url", settings.test_database_url)
+    command.upgrade(cfg, "head")
     yield eng
     eng.dispose()
 
