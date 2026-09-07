@@ -92,7 +92,7 @@ function BasketballUpload({ activeSport }: { activeSport: string | null }) {
 
     try {
       setStatusMessage("Uploading your shot to KinetiQ...");
-      const analysis = await analyzeVideo(asset);
+      const analysis = await analyzeVideo(asset, activeSport ?? "basketball");
 
       setStatusMessage("Saving your results...");
       const created = await apiFetch<{ id: string }>("/me/sessions", {
