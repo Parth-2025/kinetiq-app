@@ -56,7 +56,9 @@ def get_stats(
     if sport:
         latest_q = latest_q.where(AnalysisSession.sport == sport)
     latest = db.execute(
-        latest_q.order_by(AnalysisSession.created_at.desc()).limit(1)
+        latest_q.order_by(
+            AnalysisSession.created_at.desc(), AnalysisSession.id.desc()
+        ).limit(1)
     ).scalar()
 
     videos = int(count)
