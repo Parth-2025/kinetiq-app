@@ -26,6 +26,8 @@ export type ColorSet = {
   successSubtle: string;
   danger: string;
   dangerSubtle: string;
+  info: string;
+  infoSubtle: string;
   overlay: string;
 };
 
@@ -51,6 +53,8 @@ const DARK: ColorSet = {
   successSubtle: "#16241F",
   danger: "#E5686D",
   dangerSubtle: "#2A1B1C",
+  info: "#5B9BD5",
+  infoSubtle: "#1B2733",
   overlay: "rgba(9,12,17,0.6)",
 };
 
@@ -74,6 +78,8 @@ const LIGHT: ColorSet = {
   successSubtle: "#E7F6EF",
   danger: "#D64550",
   dangerSubtle: "#FBEBEC",
+  info: "#2F6FBF",
+  infoSubtle: "#EAF2FB",
   overlay: "rgba(17,21,28,0.35)",
 };
 
