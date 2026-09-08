@@ -1,5 +1,6 @@
 from analyzer.sports.base import SportPlugin
 from analyzer.sports.basketball import BasketballPlugin
+from analyzer.sports.tennis import TennisPlugin
 
 
 class UnknownSport(Exception):
@@ -9,7 +10,9 @@ class UnknownSport(Exception):
         super().__init__(f"unknown sport {name!r}; supported: {', '.join(supported)}")
 
 
-SPORTS: dict[str, SportPlugin] = {p.name: p for p in (BasketballPlugin(),)}
+SPORTS: dict[str, SportPlugin] = {
+    p.name: p for p in (BasketballPlugin(), TennisPlugin())
+}
 
 
 def get_plugin(name: str) -> SportPlugin:

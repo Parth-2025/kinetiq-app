@@ -22,3 +22,16 @@ def test_list_sports_shape():
     assert {"name", "display_name", "motion", "phase_order"} == set(rows[0])
     assert rows[0]["name"] == "basketball"
     assert rows[0]["phase_order"][0] == "ready_position"
+
+
+def test_tennis_registered():
+    p = get_plugin("tennis")
+    assert p.name == "tennis"
+    assert p.display_name == "Tennis"
+    assert p.motion == "serve"
+    assert p.phase_order == ["stance", "toss", "trophy", "cocking", "contact", "follow_through"]
+
+
+def test_list_sports_includes_both():
+    names = [r["name"] for r in list_sports()]
+    assert names == ["basketball", "tennis"]

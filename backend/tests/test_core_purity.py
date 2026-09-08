@@ -15,6 +15,10 @@ CORE = [
     "sports/basketball/metrics.py",
     "sports/basketball/phases.py",
     "sports/basketball/scoring.py",
+    "sports/tennis/__init__.py",
+    "sports/tennis/metrics.py",
+    "sports/tennis/phases.py",
+    "sports/tennis/scoring.py",
 ]
 FORBIDDEN = {"fastapi", "cv2", "PIL", "mediapipe", "sqlalchemy", "starlette"}
 ANALYZER = Path(__file__).resolve().parents[1] / "analyzer"
