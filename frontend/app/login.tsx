@@ -29,6 +29,9 @@ export default function LoginScreen() {
       <View
         style={{
           flex: 1,
+          width: "100%",
+          maxWidth: 480,
+          alignSelf: "center",
           paddingHorizontal: t.space.xl,
           justifyContent: "space-between",
           paddingBottom: t.space.xl,
@@ -46,12 +49,16 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View style={{ gap: t.space.m, alignItems: "center" }}>
+        <View style={{ gap: t.space.m }}>
           {authError ? (
             <InlineAlert tone="danger" title="Verification required" message={authError} />
           ) : null}
           {isLoading ? (
-            <ActivityIndicator size="large" color={t.color.accent} style={{ marginVertical: t.space.xl }} />
+            <ActivityIndicator
+              size="large"
+              color={t.color.accent}
+              style={{ marginVertical: t.space.xl, alignSelf: "center" }}
+            />
           ) : (
             <>
               <Button label="Sign in" fullWidth onPress={login} />
