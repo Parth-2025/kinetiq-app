@@ -1,6 +1,5 @@
 from analyzer.sports.tennis.metrics import frame_metrics
 from analyzer.sports.tennis.phases import PHASE_ORDER, segment
-from tests import synth
 from tests.conftest import load_fixture
 
 
