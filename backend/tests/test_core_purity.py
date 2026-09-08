@@ -7,7 +7,7 @@ CORE = [
     "geometry.py",
     "scoring_curve.py",
     "camera.py",
-    "skeleton.py",
+    # skeleton.py draws frames (cv2/PIL) — exempt like sports/*/rendering.py
     "pipeline.py",
     "registry.py",
     "sports/base.py",
