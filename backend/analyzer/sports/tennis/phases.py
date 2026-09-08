@@ -33,21 +33,25 @@ def segment(metrics: list) -> dict:
     before_contact = [(i, m) for i, m in valid if i <= contact_idx]
     toss_idx = min(before_contact, key=lambda x: x[1]["tossing_wrist_y"])[0]
 
-    # 3. trophy = deepest knee bend strictly between toss and contact
+    # 3. trophy = deepest knee bend strictly between toss and contact. An empty
+    #    window means the clip never reached a distinct trophy pose (truncated).
     trophy_window = [(i, m) for i, m in valid if toss_idx < i < contact_idx]
     trophy_idx = (
         min(trophy_window, key=lambda x: x[1]["knee_angle"])[0]
         if trophy_window
-        else toss_idx
+        else None
     )
 
     # 4. cocking = peak trunk tilt strictly between trophy and contact
-    cocking_window = [(i, m) for i, m in valid if trophy_idx < i < contact_idx]
-    cocking_idx = (
-        max(cocking_window, key=lambda x: x[1]["trunk_tilt"])[0]
-        if cocking_window
-        else None
-    )
+    if trophy_idx is None:
+        cocking_idx = None
+    else:
+        cocking_window = [(i, m) for i, m in valid if trophy_idx < i < contact_idx]
+        cocking_idx = (
+            max(cocking_window, key=lambda x: x[1]["trunk_tilt"])[0]
+            if cocking_window
+            else None
+        )
 
     # 5. stance = most upright frame before the toss starts
     pre_toss = [(i, m) for i, m in valid if i < toss_idx]
@@ -69,12 +73,13 @@ def segment(metrics: list) -> dict:
     else:
         follow_idx = None
 
-    # truncation: a clip ending at/before contact has no distinct later phases
-    if contact_idx <= trophy_idx:
+    # truncation: a clip with no distinct trophy window, or one ending at/before
+    # the trophy pose, has no distinct later phases
+    if trophy_idx is None or contact_idx <= trophy_idx:
         contact_idx = None
         cocking_idx = None
         follow_idx = None
-    if follow_idx is not None and follow_idx <= (contact_idx or trophy_idx):
+    if follow_idx is not None and follow_idx <= (contact_idx or trophy_idx or -1):
         follow_idx = None
 
     return {

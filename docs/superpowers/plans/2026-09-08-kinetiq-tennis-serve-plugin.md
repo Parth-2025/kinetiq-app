@@ -26,6 +26,13 @@
 
 The spec's `shoulder_hip_separation` metric is kept, with a **concrete image-plane definition** given in Task 1 (difference between the shoulder-line inclination and the hip-line inclination, folded to `[0, 90]`). From a pure side view this mostly tracks the shoulder-over-shoulder tilt rather than true transverse counter-rotation, which MediaPipe 2D cannot recover; on the oblique footage KinetiQ actually receives it also picks up the upper-body coil. This is the honest measurable proxy and it is deterministic to synthesize and test. No other spec metric changes.
 
+### Post-implementation deviations (final-review fix wave, 2026-09-08)
+
+- **`_SRV_*` calibration deltas applied in Task 2** so the synthetic serve's contact-wrist peak clears the toss peak for dominant-side detection: `_SRV_HIT_ELBOW@0.70` 172→179, `_SRV_HIT_ARM_ELEV@0.70` 9→2, `_SRV_TOSS_ARM_ELEV@0.30` 7→16, `_SRV_TOSS_ELBOW@0.30` 176→172, `_SRV_SH_DROP@0.70` 0.04→0.0.
+- **`toss` phase scores a new `toss_reach` metric** (tossing-wrist height, `non_dominant_wrist_y - nose_y`) instead of the spec table's `contact_reach`. The spec's `contact_reach` band for `toss` was unsatisfiable: it measures the hitting wrist, which is down at the toss, so the score pinned at 0 and feedback inverted. `contact_reach` is unchanged for the `contact` phase; `shoulder_hip_separation` is still computed in the metric dict.
+- **`cocking` phase drops `shoulder_hip_separation` from its scored band.** It is ill-conditioned on the side view the spec targets (reduces to ~`shoulder_tilt / torso_width`, saturates toward 90°) and near-redundant with `shoulder_tilt`; it was dragging `cocking` down and inverting the overall ranking. `cocking` now scores `trunk_tilt` + `knee_angle`. The metric is still computed for rendering / future use.
+- **Empty trophy-detection window (truncated clip) now reports `trophy` as `None`/`unavailable`** rather than the spec's `trophy_idx = toss_idx` fallback, which scored "trophy" on the toss pose. Downstream, a `None` trophy also nulls `cocking`/`contact`/`follow_through` for that clip (a clip with no distinct trophy window has no distinct later phases); the `contact_idx <= trophy_idx` truncation check is guarded so no `None`/`int` comparison executes.
+
 ## File Structure
 
 | File | Responsibility | Task |

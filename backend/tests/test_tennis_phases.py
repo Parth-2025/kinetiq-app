@@ -57,7 +57,7 @@ def test_truncated_serve_has_no_late_phases():
     p = _seg("serve_truncated")["phases"]
     assert p["stance"] is not None
     assert p["toss"] is not None
-    assert p["trophy"] is not None
+    assert p["trophy"] is None
     assert p["cocking"] is None
     assert p["contact"] is None
     assert p["follow_through"] is None

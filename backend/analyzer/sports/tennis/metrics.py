@@ -15,6 +15,7 @@ from analyzer.geometry import calculate_angle
 
 def _angle_between(u: np.ndarray, v: np.ndarray) -> float:
     """Unsigned angle in degrees between two 2-D vectors, in [0, 180]."""
+    # A zero-length input vector returns 0.0 (coincident joints read as aligned).
     nu = float(np.linalg.norm(u))
     nv = float(np.linalg.norm(v))
     if nu < 1e-9 or nv < 1e-9:
@@ -24,8 +25,11 @@ def _angle_between(u: np.ndarray, v: np.ndarray) -> float:
 
 
 def _line_incline(left: np.ndarray, right: np.ndarray) -> float:
-    """Inclination in degrees of the left->right segment from the image
-    horizontal, in [-90, 90]. Robust to the segment being near-vertical."""
+    """Inclination of the left->right segment from the image horizontal.
+
+    Returns degrees in the full ``atan2`` range (-180, 180]; callers fold the
+    result into [0, 90] via ``_fold_90``. Robust to the segment being
+    near-vertical."""
     dx = float(right[0] - left[0])
     dy = float(right[1] - left[1])
     return math.degrees(math.atan2(dy, dx))
@@ -80,6 +84,7 @@ def _frame_metrics(frame: dict, side: str) -> dict:
         "shoulder_tilt": abs(float(l_sh[1]) - float(r_sh[1])),
         "dominant_arm_elevation": dominant_arm_elevation,
         "contact_reach": float(d_wr[1]) - float(nose[1]),
+        "toss_reach": float(n_wr[1]) - float(nose[1]),
         "tossing_wrist_y": float(n_wr[1]),
         "dominant_wrist_y": float(d_wr[1]),
         "dominant_shoulder_y": float(d_sh[1]),

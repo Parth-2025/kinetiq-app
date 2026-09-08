@@ -54,6 +54,7 @@ def draw_skeleton_on_frame(
     size: tuple[int, int] = (400, 400),
     *,
     ideal_ranges: dict | None = None,
+    label: str = "Your Shot",
 ) -> np.ndarray:
     h, w = frame.shape[:2]
     img = frame.copy()
@@ -108,7 +109,7 @@ def draw_skeleton_on_frame(
         cv2.circle(img, (x, y), 6, (0, 0, 0), 1, cv2.LINE_AA)
 
     cv2.rectangle(img, (0, 0), (w, 30), (0, 0, 0), -1)
-    cv2.putText(img, f"Your Shot — {phase.replace('_', ' ').title()}",
+    cv2.putText(img, f"{label} — {phase.replace('_', ' ').title()}",
                 (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
     return cv2.resize(img, size)
 
@@ -122,6 +123,7 @@ def generate_pose_gif(
     *,
     ideal_ranges: dict | None = None,
     phase: str = "release",
+    label: str = "Your Shot",
 ) -> str:
     valid = [(f, a) for f, a in zip(frames, angles_list, strict=False)
              if f is not None and a is not None]
@@ -138,7 +140,8 @@ def generate_pose_gif(
         if raw_frame is None or raw_lm is None:
             continue
         drawn = draw_skeleton_on_frame(
-            raw_frame, raw_lm, angle_data, phase, size, ideal_ranges=ideal_ranges
+            raw_frame, raw_lm, angle_data, phase, size,
+            ideal_ranges=ideal_ranges, label=label,
         )
         rgb = cv2.cvtColor(drawn, cv2.COLOR_BGR2RGB)
         pil_frames.append(Image.fromarray(rgb))

@@ -20,7 +20,7 @@ IDEALS: dict[str, dict[str, dict]] = {
     },
     "toss": {
         "tossing_arm_angle": {"lo": 155.0, "hi": 180.0, "falloff": 25.0},
-        "contact_reach": {"lo": -0.30, "hi": -0.05, "falloff": 0.15},
+        "toss_reach": {"lo": -0.30, "hi": -0.05, "falloff": 0.15},
     },
     "trophy": {
         "knee_angle": {"lo": 110.0, "hi": 140.0, "falloff": 25.0},
@@ -29,7 +29,6 @@ IDEALS: dict[str, dict[str, dict]] = {
     },
     "cocking": {
         "trunk_tilt": {"lo": 10.0, "hi": 28.0, "falloff": 15.0},
-        "shoulder_hip_separation": {"lo": 15.0, "hi": 45.0, "falloff": 25.0},
         "knee_angle": {"lo": 130.0, "hi": 165.0, "falloff": 25.0},
     },
     "contact": {
@@ -89,12 +88,20 @@ PHASE_RESOURCES = {
     ],
 }
 
-_ANGLE_HINTS = ("angle", "tilt", "elevation", "separation")
+# True-angle metrics (rendered in degrees). Everything else is a normalised
+# ratio / y-difference and gets no unit suffix.
+_ANGLE_EXTRA = ("trunk_tilt", "dominant_arm_elevation", "shoulder_hip_separation")
+
+
+def _is_angle_metric(metric: str) -> bool:
+    return metric.endswith("_angle") or metric in _ANGLE_EXTRA
 
 
 def _ideal_str(metric: str, band: dict) -> str:
-    suffix = "°" if any(h in metric for h in _ANGLE_HINTS) else ""
-    return f"{band['lo']:g}–{band['hi']:g}{suffix}"
+    lo, hi = band["lo"], band["hi"]
+    if _is_angle_metric(metric):
+        return f"{lo:g}–{hi:g}°"
+    return f"{lo:g} to {hi:g}"
 
 
 def generate_feedback(phase: str, metrics: dict) -> tuple[str, str]:
@@ -106,7 +113,7 @@ def generate_feedback(phase: str, metrics: dict) -> tuple[str, str]:
 
     if phase == "toss":
         arm = metrics.get("tossing_arm_angle", 170.0)
-        reach = metrics.get("contact_reach", -0.15)
+        reach = metrics.get("toss_reach", -0.15)
         if arm < 150.0:
             return (f"Tossing arm bent ({arm:.0f}°) — keep it straight and lift, don't throw.", "error")
         if reach > -0.03:
@@ -125,11 +132,8 @@ def generate_feedback(phase: str, metrics: dict) -> tuple[str, str]:
 
     if phase == "cocking":
         tilt = metrics.get("trunk_tilt", 20.0)
-        sep = metrics.get("shoulder_hip_separation", 25.0)
         if tilt < 8.0:
             return (f"Little upper-body coil ({tilt:.0f}°) — let the shoulders tilt back into the drop.", "warning")
-        if sep < 12.0:
-            return ("Shoulders and hips turning together — separate them to store more power.", "warning")
         return (f"Good racket drop — trunk tilted ({tilt:.0f}°) with shoulder-over-shoulder.", "good")
 
     if phase == "contact":

@@ -177,7 +177,10 @@ def make_serve(
 ) -> list[dict]:
     """Deterministic side-view tennis serve. Figure faces +x; the dominant
     arm is on the +x side. Sweeps stance -> toss -> trophy -> cocking ->
-    contact -> follow_through in temporal order."""
+    contact -> follow_through in temporal order.
+
+    Assumes ``n_frames >= 6`` and, when given, ``truncate_frac`` in ``(0, 1]``.
+    """
     knee_keys = [(f, v if v is not None else trophy_knee_deg) for f, v in _SRV_KNEE]
     shoulder_sep = 0.06 if view == "side" else 0.24
     sign = 1.0 if dominant_side == "right" else -1.0

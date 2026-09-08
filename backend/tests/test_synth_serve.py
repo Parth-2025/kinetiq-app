@@ -50,4 +50,7 @@ def test_truncated_is_shorter_and_min_six_frames():
 
 
 def test_scenarios_and_fixture_names_align():
+    from tests.conftest import SERVE_FIXTURE_NAMES
+
     assert set(synth.SERVE_SCENARIOS) == {"serve_good", "serve_shallow_trophy", "serve_truncated"}
+    assert set(synth.SERVE_SCENARIOS) | {"serve_no_pose"} == set(SERVE_FIXTURE_NAMES)

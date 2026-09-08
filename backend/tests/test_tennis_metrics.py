@@ -7,7 +7,7 @@ from tests import synth
 KEYS = {
     "dominant_side", "hitting_elbow_angle", "tossing_arm_angle", "knee_angle",
     "trunk_tilt", "shoulder_hip_separation", "shoulder_tilt",
-    "dominant_arm_elevation", "contact_reach", "tossing_wrist_y",
+    "dominant_arm_elevation", "contact_reach", "toss_reach", "tossing_wrist_y",
     "dominant_wrist_y", "dominant_shoulder_y", "torso_width", "torso_height",
 }
 
@@ -68,6 +68,14 @@ def test_contact_reach_negative_when_wrist_above_nose():
     m = _frame_metrics(f, "right")
     assert m["contact_reach"] == pytest.approx(0.02 - 0.12, abs=1e-6)
     assert m["contact_reach"] < 0
+
+
+def test_toss_reach_negative_when_tossing_wrist_above_nose():
+    # non-dominant (tossing) wrist lifted above the head -> toss_reach < 0
+    f = _hand_frame(left_wrist=[0.45, 0.02, 0.0, 1.0])
+    m = _frame_metrics(f, "right")
+    assert m["toss_reach"] == pytest.approx(0.02 - 0.12, abs=1e-6)
+    assert m["toss_reach"] < 0
 
 
 def test_backward_trunk_lean_increases_trunk_tilt():

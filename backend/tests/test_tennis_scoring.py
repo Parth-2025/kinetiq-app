@@ -1,3 +1,4 @@
+from analyzer.pipeline import _extract_phase_metrics
 from analyzer.sports.tennis.metrics import frame_metrics
 from analyzer.sports.tennis.phases import PHASE_ORDER, segment
 from analyzer.sports.tennis.scoring import (
@@ -13,10 +14,7 @@ from tests.conftest import load_fixture
 def _analyze(name):
     m = frame_metrics(load_fixture(name))
     seg = segment(m)
-    pm = {}
-    for p in PHASE_ORDER:
-        idx = seg["phases"].get(p)
-        pm[p] = m[idx] if idx is not None and m[idx] is not None else None
+    pm = _extract_phase_metrics(m, seg["phases"], PHASE_ORDER)
     return score(pm)
 
 
@@ -53,6 +51,10 @@ def test_shallow_trophy_scores_below_good_at_trophy():
     assert shallow < good
 
 
+def test_overall_ranks_good_above_shallow_trophy():
+    assert _analyze("serve_shallow_trophy")["overall_score"] < _analyze("serve_good")["overall_score"]
+
+
 def test_missing_phase_is_unavailable():
     result = score({k: None for k in PHASE_ORDER})
     assert result["overall_score"] == 0
@@ -68,6 +70,10 @@ def test_angle_unit_suffix_rules():
     assert "hitting_elbow_angle" in measured
     assert measured["hitting_elbow_angle"]["ideal"].endswith("°")
     assert not measured["contact_reach"]["ideal"].endswith("°")
+
+    trophy = result["phases"]["trophy"]["angles_measured"]
+    assert not trophy["shoulder_tilt"]["ideal"].endswith("°")
+    assert trophy["hitting_elbow_angle"]["ideal"].endswith("°")
 
 
 def test_priority_is_lowest_scoring_phase():

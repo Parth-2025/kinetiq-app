@@ -138,6 +138,6 @@ def render_phase_images(frames, metrics, phases, phase_metrics, size=(460, 460))
 
 def render_all(frames: list, metrics: list, phases: dict, phase_metrics: dict) -> dict:
     return {
-        "pose_gif": generate_pose_gif(frames, metrics),
+        "pose_gif": generate_pose_gif(frames, metrics, label="Your Serve", phase="contact"),
         "phase_images": render_phase_images(frames, metrics, phases, phase_metrics),
     }
