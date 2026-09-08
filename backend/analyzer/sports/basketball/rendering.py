@@ -86,109 +86,119 @@ def draw_skeleton_on_frame(
     return cv2.resize(img, size)
 
 
-def draw_ideal_skeleton(phase: str, angles: dict, size: tuple[int, int] = (400, 400)) -> np.ndarray:
+# App palette (BGR). Ink bg, slate strips, terracotta = the joint you must fix,
+# steel = everything else.
+_BG = (28, 21, 17)          # #11151C
+_STRIP = (64, 45, 33)       # #212D40
+_STEEL = (125, 107, 90)     # #5A6B7D
+_KEY = (83, 104, 214)       # #D66853  (terracotta)
+_INK_TEXT = (245, 240, 235)
+_MUTED_TEXT = (170, 155, 140)
+_GOOD = (110, 190, 100)     # in-range readout
+
+# Side-profile reference pose per phase (normalised x,y; figure faces +x).
+# Only a sagittal-plane figure can show knee/elbow flexion, which is what the
+# "You" frame (filmed from the side) shows.
+_IDEAL_PROFILE = {
+    "ready_position": {
+        "head": (0.50, 0.13), "shoulder": (0.49, 0.26), "elbow": (0.47, 0.40),
+        "wrist": (0.49, 0.52), "hip": (0.50, 0.50), "knee": (0.52, 0.68),
+        "ankle": (0.50, 0.85), "toe": (0.58, 0.87),
+    },
+    "load": {
+        "head": (0.44, 0.17), "shoulder": (0.43, 0.30), "elbow": (0.40, 0.42),
+        "wrist": (0.50, 0.47), "hip": (0.52, 0.52), "knee": (0.60, 0.64),
+        "ankle": (0.49, 0.83), "toe": (0.58, 0.85),
+    },
+    "set_point": {
+        "head": (0.49, 0.15), "shoulder": (0.49, 0.28), "elbow": (0.53, 0.34),
+        "wrist": (0.51, 0.20), "hip": (0.50, 0.51), "knee": (0.52, 0.70),
+        "ankle": (0.50, 0.86), "toe": (0.58, 0.88),
+    },
+    "release": {
+        "head": (0.49, 0.15), "shoulder": (0.49, 0.26), "elbow": (0.52, 0.14),
+        "wrist": (0.55, 0.04), "hip": (0.49, 0.50), "knee": (0.49, 0.70),
+        "ankle": (0.48, 0.84), "toe": (0.55, 0.89),
+    },
+    "follow_through": {
+        "head": (0.49, 0.15), "shoulder": (0.49, 0.26), "elbow": (0.53, 0.13),
+        "wrist": (0.60, 0.20), "hip": (0.49, 0.50), "knee": (0.49, 0.70),
+        "ankle": (0.48, 0.85), "toe": (0.55, 0.89),
+    },
+}
+_PROFILE_BONES = [
+    ("head", "shoulder"), ("shoulder", "elbow"), ("elbow", "wrist"),
+    ("shoulder", "hip"), ("hip", "knee"), ("knee", "ankle"), ("ankle", "toe"),
+]
+# title, one-line cue, (measured-angle key, label, (lo, hi)), key joints
+_IDEAL_PHASE = {
+    "ready_position": ("Ready Position", "Stand tall - knees soft",
+                       ("knee_angle", "Knee", (155, 175)), {"knee", "hip", "shoulder"}),
+    "load":           ("Load", "Sit down - hinge hips back",
+                       ("knee_angle", "Knee", (80, 110)), {"knee", "hip"}),
+    "set_point":      ("Set Point", "Ball at forehead, elbow under",
+                       ("elbow_angle", "Elbow", (85, 100)), {"elbow", "wrist"}),
+    "release":        ("Release", "Full extension - rise to toes",
+                       ("elbow_angle", "Elbow", (155, 175)), {"elbow", "shoulder"}),
+    "follow_through": ("Follow Through", "Hold the gooseneck",
+                       ("elbow_angle", "Elbow", (155, 180)), {"wrist", "elbow"}),
+}
+
+
+def draw_ideal_skeleton(phase: str, angles: dict, size: tuple[int, int] = (460, 460)) -> np.ndarray:
     w, h = size
-    img = np.zeros((h, w, 3), dtype=np.uint8)
-    img[:] = (20, 20, 30)
-    side = angles.get("shooting_side", "right")
+    img = np.full((h, w, 3), _BG, dtype=np.uint8)
 
-    ideal_positions = {
-        "load": {
-            "nose": (0.50, 0.12),
-            "left_shoulder": (0.38, 0.28), "right_shoulder": (0.62, 0.28),
-            "left_elbow": (0.28, 0.40),    "right_elbow": (0.75, 0.36),
-            "left_wrist": (0.32, 0.52),    "right_wrist": (0.68, 0.26),
-            "left_hip": (0.40, 0.52),      "right_hip": (0.60, 0.52),
-            "left_knee": (0.36, 0.70),     "right_knee": (0.58, 0.70),
-            "left_ankle": (0.34, 0.88),    "right_ankle": (0.56, 0.88),
-            "left_foot": (0.30, 0.94),     "right_foot": (0.60, 0.94),
-        },
-        "set_point": {
-            "nose": (0.50, 0.10),
-            "left_shoulder": (0.38, 0.26), "right_shoulder": (0.62, 0.26),
-            "left_elbow": (0.26, 0.36),    "right_elbow": (0.72, 0.22),
-            "left_wrist": (0.30, 0.24),    "right_wrist": (0.65, 0.12),
-            "left_hip": (0.40, 0.50),      "right_hip": (0.60, 0.50),
-            "left_knee": (0.37, 0.68),     "right_knee": (0.58, 0.68),
-            "left_ankle": (0.35, 0.86),    "right_ankle": (0.56, 0.86),
-            "left_foot": (0.31, 0.93),     "right_foot": (0.60, 0.93),
-        },
-        "release": {
-            "nose": (0.50, 0.08),
-            "left_shoulder": (0.38, 0.24), "right_shoulder": (0.62, 0.22),
-            "left_elbow": (0.24, 0.28),    "right_elbow": (0.74, 0.14),
-            "left_wrist": (0.26, 0.14),    "right_wrist": (0.72, 0.04),
-            "left_hip": (0.40, 0.48),      "right_hip": (0.60, 0.48),
-            "left_knee": (0.38, 0.64),     "right_knee": (0.58, 0.64),
-            "left_ankle": (0.36, 0.82),    "right_ankle": (0.56, 0.82),
-            "left_foot": (0.32, 0.90),     "right_foot": (0.60, 0.90),
-        },
-        "follow_through": {
-            "nose": (0.50, 0.08),
-            "left_shoulder": (0.38, 0.24), "right_shoulder": (0.62, 0.22),
-            "left_elbow": (0.24, 0.22),    "right_elbow": (0.76, 0.12),
-            "left_wrist": (0.22, 0.10),    "right_wrist": (0.78, 0.20),
-            "left_hip": (0.40, 0.48),      "right_hip": (0.60, 0.48),
-            "left_knee": (0.38, 0.66),     "right_knee": (0.58, 0.66),
-            "left_ankle": (0.36, 0.84),    "right_ankle": (0.56, 0.84),
-            "left_foot": (0.32, 0.92),     "right_foot": (0.60, 0.92),
-        },
-        "ready_position": {
-            "nose": (0.50, 0.10),
-            "left_shoulder": (0.38, 0.26), "right_shoulder": (0.62, 0.26),
-            "left_elbow": (0.28, 0.40),    "right_elbow": (0.72, 0.40),
-            "left_wrist": (0.30, 0.52),    "right_wrist": (0.70, 0.52),
-            "left_hip": (0.40, 0.52),      "right_hip": (0.60, 0.52),
-            "left_knee": (0.38, 0.72),     "right_knee": (0.58, 0.72),
-            "left_ankle": (0.36, 0.88),    "right_ankle": (0.56, 0.88),
-            "left_foot": (0.32, 0.94),     "right_foot": (0.60, 0.94),
-        },
-    }
+    pose = _IDEAL_PROFILE.get(phase, _IDEAL_PROFILE["set_point"])
+    title, cue, (metric_key, metric_label, (lo, hi)), key = _IDEAL_PHASE.get(
+        phase, _IDEAL_PHASE["set_point"]
+    )
+    px = {name: (int(x * w), int(y * h)) for name, (x, y) in pose.items()}
 
-    positions = ideal_positions.get(phase, ideal_positions["set_point"])
-    key_joints = {
-        "load":           [f"{side}_knee", f"{side}_hip", f"{side}_ankle"],
-        "set_point":      [f"{side}_elbow", f"{side}_wrist", f"{side}_shoulder"],
-        "release":        [f"{side}_elbow", f"{side}_wrist", f"{side}_knee"],
-        "follow_through": [f"{side}_elbow", f"{side}_wrist"],
-        "ready_position": [f"{side}_knee", "left_shoulder", "right_shoulder"],
-    }
-    keys = key_joints.get(phase, [])
+    # ground line
+    floor_y = int(0.89 * h)
+    cv2.line(img, (int(0.12 * w), floor_y), (int(0.88 * w), floor_y), _STRIP, 3, cv2.LINE_AA)
 
-    for (a_name, b_name) in SKELETON_CONNECTIONS:
-        if a_name not in positions or b_name not in positions:
+    # bones
+    for a, b in _PROFILE_BONES:
+        col = _KEY if (a in key and b in key) else _STEEL
+        cv2.line(img, px[a], px[b], col, 8, cv2.LINE_AA)
+    # joints
+    for name, (x, y) in px.items():
+        if name == "head":
+            cv2.circle(img, (x, y), 16, _STEEL, 3, cv2.LINE_AA)
             continue
-        ax = int(positions[a_name][0] * w)
-        ay = int(positions[a_name][1] * h)
-        bx = int(positions[b_name][0] * w)
-        by = int(positions[b_name][1] * h)
-        ca = (0, 220, 0) if a_name in keys else (180, 180, 180)
-        cb = (0, 220, 0) if b_name in keys else (180, 180, 180)
-        mid = tuple(int((x + y) / 2) for x, y in zip(ca, cb, strict=False))
-        cv2.line(img, (ax, ay), (bx, by), mid, 3, cv2.LINE_AA)
+        col = _KEY if name in key else _STEEL
+        r = 11 if name in key else 8
+        cv2.circle(img, (x, y), r, col, -1, cv2.LINE_AA)
+        cv2.circle(img, (x, y), r, _BG, 2, cv2.LINE_AA)
 
-    for name, pos in positions.items():
-        x = int(pos[0] * w)
-        y = int(pos[1] * h)
-        color = (0, 220, 0) if name in keys else (180, 180, 180)
-        cv2.circle(img, (x, y), 7, color, -1, cv2.LINE_AA)
-        cv2.circle(img, (x, y), 7, (0, 0, 0), 1, cv2.LINE_AA)
+    # the ball — at the shooting hand for airborne phases, at the hip for stance
+    ball_anchor = "wrist" if phase in ("set_point", "release", "follow_through") else "hip"
+    bx0, by0 = px[ball_anchor]
+    cv2.circle(img, (bx0, by0), 20, _KEY, 2, cv2.LINE_AA)
+    cv2.circle(img, (bx0, by0), 20, (60, 80, 150), 1, cv2.LINE_AA)
 
-    cv2.rectangle(img, (0, 0), (w, 30), (0, 0, 0), -1)
-    cv2.putText(img, "Ideal Form  (green = key joints)",
-                (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 220, 0), 1)
+    # header
+    cv2.rectangle(img, (0, 0), (w, 40), _STRIP, -1)
+    cv2.putText(img, f"IDEAL - {title}", (14, 27),
+                cv2.FONT_HERSHEY_DUPLEX, 0.62, _INK_TEXT, 1, cv2.LINE_AA)
 
-    angle_labels = {
-        "load":           [("Knee: 80-110°", (0.42, 0.72)), ("Elbow: 80-110°", (0.65, 0.42))],
-        "set_point":      [("Elbow: 85-100°", (0.62, 0.18)), ("Guide: 60-100°", (0.20, 0.32))],
-        "release":        [("Elbow: 155-175°", (0.62, 0.10)), ("Legs: Straight", (0.42, 0.64))],
-        "follow_through": [("Wrist snap ↓", (0.70, 0.22)), ("Hold pose", (0.30, 0.18))],
-        "ready_position": [("Feet: shoulder width", (0.30, 0.90)), ("Stand tall", (0.38, 0.20))],
-    }
-    for label, (nx, ny) in angle_labels.get(phase, []):
-        px, py = int(nx * w), int(ny * h)
-        cv2.putText(img, label, (px, py),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 220, 50), 1, cv2.LINE_AA)
+    # target / your-value badge, top-right
+    measured = angles.get(metric_key)
+    bx = w - 168
+    cv2.rectangle(img, (bx, 52), (w - 12, 108 if measured is not None else 82), _STRIP, -1)
+    cv2.putText(img, f"Target {lo}-{hi}deg", (bx + 12, 74),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, _MUTED_TEXT, 1, cv2.LINE_AA)
+    if measured is not None:
+        ok = lo <= measured <= hi
+        cv2.putText(img, f"You {round(measured)}deg", (bx + 12, 98),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, _GOOD if ok else _KEY, 1, cv2.LINE_AA)
+
+    # cue strip, bottom
+    cv2.rectangle(img, (0, h - 44), (w, h), _STRIP, -1)
+    cv2.putText(img, cue, (14, h - 16),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.56, _INK_TEXT, 1, cv2.LINE_AA)
     return img
 
 
@@ -236,7 +246,7 @@ def extract_phase_frame_b64(
     frame_data: dict | None,
     angles: dict | None,
     phase: str,
-    size: tuple[int, int] = (400, 400),
+    size: tuple[int, int] = (460, 460),
 ) -> tuple[str, str]:
     if angles:
         ideal_img = draw_ideal_skeleton(phase, angles, size)
@@ -263,7 +273,7 @@ def extract_phase_frame_b64(
 _PHASES = ["ready_position", "load", "set_point", "release", "follow_through"]
 
 
-def render_phase_images(frames, angles_list, phases, phase_angles, size=(380, 380)):
+def render_phase_images(frames, angles_list, phases, phase_angles, size=(460, 460)):
     by_index = {i: f for i, f in enumerate(frames)}
     out = {}
     for phase in _PHASES:
