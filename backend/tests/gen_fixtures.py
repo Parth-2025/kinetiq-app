@@ -22,7 +22,11 @@ def main() -> None:
         frames = synth.make_shot(n_frames=60, **kwargs)
         (OUT / f"{name}.json").write_text(json.dumps(_serialize(frames)))
     (OUT / "no_pose.json").write_text(json.dumps(_serialize(synth.no_pose(40))))
-    print("wrote", len(synth.SCENARIOS) + 1, "fixtures to", OUT)
+    for name, kwargs in synth.SERVE_SCENARIOS.items():
+        frames = synth.make_serve(n_frames=48, **kwargs)
+        (OUT / f"{name}.json").write_text(json.dumps(_serialize(frames)))
+    (OUT / "serve_no_pose.json").write_text(json.dumps(_serialize(synth.no_pose(30))))
+    print("wrote", len(synth.SCENARIOS) + len(synth.SERVE_SCENARIOS) + 2, "fixtures to", OUT)
 
 
 if __name__ == "__main__":

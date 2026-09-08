@@ -18,6 +18,13 @@ FIXTURE_NAMES = [
     "truncated",
 ]
 
+SERVE_FIXTURE_NAMES = [
+    "serve_good",
+    "serve_shallow_trophy",
+    "serve_truncated",
+    "serve_no_pose",
+]
+
 
 def _deserialize(frames: list) -> list:
     """JSON list-of-lists back into list[dict[str, np.ndarray] | None]."""
