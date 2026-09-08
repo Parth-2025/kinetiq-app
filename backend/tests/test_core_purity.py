@@ -7,7 +7,7 @@ CORE = [
     "geometry.py",
     "scoring_curve.py",
     "camera.py",
-    "skeleton.py",
+    # skeleton.py draws frames (cv2/PIL) — exempt like sports/*/rendering.py
     "pipeline.py",
     "registry.py",
     "sports/base.py",
@@ -15,6 +15,10 @@ CORE = [
     "sports/basketball/metrics.py",
     "sports/basketball/phases.py",
     "sports/basketball/scoring.py",
+    "sports/tennis/__init__.py",
+    "sports/tennis/metrics.py",
+    "sports/tennis/phases.py",
+    "sports/tennis/scoring.py",
 ]
 FORBIDDEN = {"fastapi", "cv2", "PIL", "mediapipe", "sqlalchemy", "starlette"}
 ANALYZER = Path(__file__).resolve().parents[1] / "analyzer"

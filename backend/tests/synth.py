@@ -153,6 +153,118 @@ def make_shot(
     return frames
 
 
+# --- tennis serve ---------------------------------------------------------
+
+# fraction of clip -> degrees / normalised units
+_SRV_KNEE = [(0.0, 173), (0.12, 171), (0.42, None), (0.60, 150), (0.70, 176), (1.0, 178)]
+_SRV_TRUNK_TILT = [(0.0, 2), (0.12, 3), (0.42, 11), (0.55, 22), (0.70, 6), (1.0, 4)]
+_SRV_HIT_ELBOW = [(0.0, 150), (0.30, 122), (0.42, 100), (0.55, 96),
+                  (0.70, 179), (0.85, 62), (1.0, 55)]
+_SRV_HIT_ARM_ELEV = [(0.0, 168), (0.30, 112), (0.42, 96), (0.55, 82),
+                     (0.70, 2), (0.85, 108), (1.0, 128)]
+_SRV_TOSS_ARM_ELEV = [(0.0, 168), (0.14, 92), (0.30, 16), (0.46, 62),
+                      (0.66, 150), (1.0, 165)]
+_SRV_TOSS_ELBOW = [(0.0, 158), (0.30, 172), (0.60, 150), (1.0, 148)]
+_SRV_SH_DROP = [(0.0, 0.005), (0.42, 0.09), (0.55, 0.11), (0.70, 0.0), (1.0, 0.01)]
+
+
+def make_serve(
+    n_frames: int = 48,
+    dominant_side: str = "right",
+    view: str = "side",
+    trophy_knee_deg: float = 124.0,
+    truncate_frac: float | None = None,
+) -> list[dict]:
+    """Deterministic side-view tennis serve. Figure faces +x; the dominant
+    arm is on the +x side. Sweeps stance -> toss -> trophy -> cocking ->
+    contact -> follow_through in temporal order.
+
+    Assumes ``n_frames >= 6`` and, when given, ``truncate_frac`` in ``(0, 1]``.
+    """
+    knee_keys = [(f, v if v is not None else trophy_knee_deg) for f, v in _SRV_KNEE]
+    shoulder_sep = 0.06 if view == "side" else 0.24
+    sign = 1.0 if dominant_side == "right" else -1.0
+    up = np.array([0.0, -1.0])
+    total = n_frames if truncate_frac is None else max(6, int(n_frames * truncate_frac))
+    frames: list[dict] = []
+
+    for i in range(total):
+        t = i / (n_frames - 1)
+        knee_a = _lerp_keys(t, knee_keys)
+        trunk = _lerp_keys(t, _SRV_TRUNK_TILT)
+        hit_elbow = _lerp_keys(t, _SRV_HIT_ELBOW)
+        hit_elev = _lerp_keys(t, _SRV_HIT_ARM_ELEV)
+        toss_elev = _lerp_keys(t, _SRV_TOSS_ARM_ELEV)
+        toss_elbow = _lerp_keys(t, _SRV_TOSS_ELBOW)
+        sh_drop = _lerp_keys(t, _SRV_SH_DROP)
+
+        hip_c = np.array([0.50, 0.52])
+        # torso leans backward (toward -x for a right-hander) by `trunk` degrees
+        neck = hip_c + _TORSO * _rot(up, -sign * trunk)
+        sh_off = np.array([sign * shoulder_sep / 2.0, 0.0])
+        sh_dom = neck + sh_off
+        sh_non = neck - sh_off
+        # drop the dominant shoulder during the trophy/cocking window
+        sh_dom = sh_dom + np.array([0.0, sh_drop])
+
+        # dominant arm: elbow at `hit_elev` from straight-up (rotated toward +x),
+        # wrist bends to interior `hit_elbow`
+        elbow_dir = _rot(up, sign * hit_elev)
+        el_dom = sh_dom + _UPPER_ARM * elbow_dir
+        wr_dom = el_dom + _FOREARM * _rot(-elbow_dir, sign * hit_elbow)
+
+        # tossing arm: elbow at `toss_elev` from straight-up (toward -x),
+        # near-straight interior `toss_elbow`
+        toss_dir = _rot(up, -sign * toss_elev)
+        el_non = sh_non + _UPPER_ARM * toss_dir
+        wr_non = el_non + _FOREARM * _rot(-toss_dir, -sign * toss_elbow)
+
+        # legs: symmetric, knee placed slightly forward, ankle gives interior knee_a
+        knee_dir = _rot(up, 6.0)
+        knee_pt = hip_c + _THIGH * knee_dir
+        ankle_pt = knee_pt + _SHIN * _rot(-knee_dir, knee_a)
+
+        head = neck + np.array([0.0, -0.10])
+        hip_L = hip_c + np.array([-0.055, 0.0])
+        hip_R = hip_c + np.array([0.055, 0.0])
+        knee_L = knee_pt + np.array([-0.035, 0.0])
+        knee_R = knee_pt + np.array([0.035, 0.0])
+        ank_L = ankle_pt + np.array([-0.035, 0.0])
+        ank_R = ankle_pt + np.array([0.035, 0.0])
+
+        dom_is_left = dominant_side == "left"
+        sh_L, sh_R = (sh_dom, sh_non) if dom_is_left else (sh_non, sh_dom)
+        el_L, el_R = (el_dom, el_non) if dom_is_left else (el_non, el_dom)
+        wr_L, wr_R = (wr_dom, wr_non) if dom_is_left else (wr_non, wr_dom)
+
+        frame = {
+            "nose": _p(head),
+            "left_eye": _p(head + np.array([-0.02, -0.01])),
+            "right_eye": _p(head + np.array([0.02, -0.01])),
+            "left_ear": _p(head + np.array([-0.04, 0.0])),
+            "right_ear": _p(head + np.array([0.04, 0.0])),
+            "left_shoulder": _p(sh_L),
+            "right_shoulder": _p(sh_R),
+            "left_elbow": _p(el_L),
+            "right_elbow": _p(el_R),
+            "left_wrist": _p(wr_L),
+            "right_wrist": _p(wr_R),
+            "left_hip": _p(hip_L),
+            "right_hip": _p(hip_R),
+            "left_knee": _p(knee_L),
+            "right_knee": _p(knee_R),
+            "left_ankle": _p(ank_L),
+            "right_ankle": _p(ank_R),
+            "left_heel": _p(ank_L + np.array([-0.01, 0.03])),
+            "right_heel": _p(ank_R + np.array([0.01, 0.03])),
+            "left_foot": _p(ank_L + np.array([-0.05, 0.04])),
+            "right_foot": _p(ank_R + np.array([0.05, 0.04])),
+        }
+        frames.append(frame)
+
+    return frames
+
+
 def no_pose(n_frames: int = 40) -> list[None]:
     return [None] * n_frames
 
@@ -169,4 +281,11 @@ SCENARIOS: dict[str, dict] = {
     "truncated": dict(view="side", load_knee_deg=95.0, setpoint_elbow_deg=92.0,
                       release_elbow_deg=168.0, guide_elbow_deg=80.0, shoulder_tilt=0.01,
                       truncate_frac=0.45),
+}
+
+
+SERVE_SCENARIOS: dict[str, dict] = {
+    "serve_good": dict(view="side", trophy_knee_deg=124.0),
+    "serve_shallow_trophy": dict(view="side", trophy_knee_deg=165.0),
+    "serve_truncated": dict(view="side", trophy_knee_deg=124.0, truncate_frac=0.45),
 }

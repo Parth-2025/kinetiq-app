@@ -29,6 +29,50 @@ def client(monkeypatch):
     return TestClient(main.app)
 
 
+@pytest.fixture
+def tennis_client(monkeypatch):
+    from analyzer import pose
+    from analyzer.sports.tennis import rendering as t_rendering
+
+    raw = []
+    for f in synth.make_serve(n_frames=48):
+        f = dict(f)
+        f["_frame"] = None
+        f["_raw_landmarks"] = None
+        raw.append(f)
+
+    monkeypatch.setattr(pose, "extract_landmarks_from_video", lambda _p: raw)
+    monkeypatch.setattr(t_rendering, "generate_pose_gif", lambda *a, **k: "")
+    monkeypatch.setattr(
+        t_rendering, "render_phase_images",
+        lambda *a, **k: {p: {"user_frame": "", "ideal_frame": ""} for p in
+                         ["stance", "toss", "trophy", "cocking", "contact", "follow_through"]},
+    )
+    import main
+    return TestClient(main.app)
+
+
+def test_sports_lists_tennis(tennis_client):
+    rows = tennis_client.get("/sports").json()
+    t = next(r for r in rows if r["name"] == "tennis")
+    assert t["motion"] == "serve"
+    assert t["phase_order"] == ["stance", "toss", "trophy", "cocking", "contact", "follow_through"]
+
+
+def test_analyze_routes_to_tennis(tennis_client):
+    r = tennis_client.post(
+        "/analyze",
+        files={"video": ("serve.mp4", io.BytesIO(b"x"), "video/mp4")},
+        data={"sport": "tennis"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["sport"] == "tennis"
+    assert body["motion"] == "serve"
+    assert body["phase_order"] == ["stance", "toss", "trophy", "cocking", "contact", "follow_through"]
+    assert set(body["phases"]) == {"stance", "toss", "trophy", "cocking", "contact", "follow_through"}
+
+
 def _post(client, **extra):
     return client.post(
         "/analyze",
