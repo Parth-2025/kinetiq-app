@@ -46,11 +46,15 @@ export function Button({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: Boolean(isDisabled), busy: Boolean(loading) }}
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => [
         {
-          height: t.size[size],
+          minHeight: Math.max(44, t.size[size]),
+          paddingVertical: 10,
           borderRadius: t.radius.l,
           paddingHorizontal: t.space.l,
           flexDirection: "row",

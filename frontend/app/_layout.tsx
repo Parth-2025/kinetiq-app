@@ -5,6 +5,8 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { AccessibilityInfo } from "react-native";
 import "react-native-reanimated";
 
 import { AuthProvider } from "@/context/auth-context";
@@ -12,19 +14,34 @@ import { ThemeProvider, useTheme } from "@/theme";
 
 function ThemedStack() {
   const t = useTheme();
+  const [reduceMotion, setReduceMotion] = useState(true);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const listener = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion,
+    );
+    return () => listener.remove();
+  }, []);
   return (
-    <NavigationThemeProvider value={t.mode === "dark" ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider
+      value={t.mode === "dark" ? DarkTheme : DefaultTheme}
+    >
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: t.color.bg },
-          animation: "slide_from_right",
+          animation: reduceMotion ? "none" : "slide_from_right",
         }}
       >
         <Stack.Screen name="login" />
-        <Stack.Screen name="auth/callback" options={{ animation: "fade" }} />
+        <Stack.Screen
+          name="auth/callback"
+          options={{ animation: reduceMotion ? "none" : "fade" }}
+        />
         <Stack.Screen name="onboarding/username" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="coach" />
         <Stack.Screen name="messages/[friendId]" />
         <Stack.Screen name="messages/new" />
         <Stack.Screen name="friends/add" />

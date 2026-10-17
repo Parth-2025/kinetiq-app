@@ -1,5 +1,6 @@
 import threading
 import urllib.request
+import uuid
 from pathlib import Path
 
 import numpy as np
@@ -36,9 +37,19 @@ def ensure_model() -> str:
         settings.model_cache_dir.mkdir(parents=True, exist_ok=True)
         dest = settings.model_cache_dir / "pose_landmarker_heavy.task"
         if not dest.exists():
-            tmp = dest.with_suffix(".task.download")
-            urllib.request.urlretrieve(_MODEL_URL, tmp)
-            tmp.replace(dest)
+            # Separate worker processes must not overwrite one another's download.
+            tmp = dest.with_name(f"{dest.name}.{uuid.uuid4().hex}.download")
+            try:
+                with urllib.request.urlopen(_MODEL_URL, timeout=60) as response, tmp.open("wb") as stream:
+                    total = 0
+                    while chunk := response.read(1024 * 1024):
+                        total += len(chunk)
+                        if total > 100 * 1024 * 1024:
+                            raise ValueError("Pose model download exceeded its size limit.")
+                        stream.write(chunk)
+                tmp.replace(dest)
+            finally:
+                tmp.unlink(missing_ok=True)
         _model_path = dest
         return str(dest)
 

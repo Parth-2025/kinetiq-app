@@ -4,6 +4,14 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from db.models import Base
+from studio import models as studio_models  # noqa: F401 — register additive domain tables
+from studio import coaching_models  # noqa: F401
+from studio import claim_models  # noqa: F401
+from studio import practice_capture_models  # noqa: F401
+from studio import sensor_models  # noqa: F401
+from studio import deletion_models  # noqa: F401
+from studio import practice_tracking_models  # noqa: F401
+from studio import rig_models  # noqa: F401
 from settings import settings
 
 config = context.config

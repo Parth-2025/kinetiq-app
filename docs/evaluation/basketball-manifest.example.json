@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "source": "REPLACE_WITH_DATASET_SOURCE",
+    "consent": "REPLACE_WITH_CONSENT_SCOPE_AND_REFERENCE",
+    "annotation_revision": "v1"
+  },
+  "recordings": []
+}

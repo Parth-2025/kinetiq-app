@@ -11,6 +11,19 @@ from routers.profile import router as profile_router
 from routers.sessions import router as sessions_router
 from routers.sports import router as sports_router
 from routers.stats import router as stats_router
+from studio.router import router as studio_router
+from studio.coaching_routes import router as coaching_router
+from studio.data_routes import router as data_router
+from studio.claim_routes import router as claim_router
+from studio.comparison_routes import router as comparison_router
+from studio.practice_capture_routes import router as practice_capture_router
+from studio.sensor_routes import router as sensor_router
+from studio.deletion_routes import router as deletion_router
+from studio.tracking_routes import router as tracking_router
+from studio.motion_routes import router as motion_router
+from studio.session_query_routes import router as session_query_router
+from studio.rig_routes import router as rig_router
+from studio.shot_routes import router as shot_router
 from settings import settings
 
 logger = logging.getLogger(__name__)
@@ -39,3 +52,16 @@ app.include_router(profile_router)
 app.include_router(sports_router)
 app.include_router(sessions_router)
 app.include_router(stats_router)
+app.include_router(studio_router)
+app.include_router(coaching_router)
+app.include_router(data_router)
+app.include_router(claim_router)
+app.include_router(comparison_router)
+app.include_router(practice_capture_router)
+app.include_router(sensor_router)
+app.include_router(deletion_router)
+app.include_router(tracking_router)
+app.include_router(motion_router)
+app.include_router(session_query_router)
+app.include_router(rig_router)
+app.include_router(shot_router)

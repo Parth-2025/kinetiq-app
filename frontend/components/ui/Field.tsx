@@ -73,6 +73,7 @@ export function Field({
           </Text>
         ) : null}
         <TextInput
+          accessibilityLabel={label}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

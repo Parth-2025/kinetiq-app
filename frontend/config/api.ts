@@ -17,6 +17,11 @@ export function registerTokenAccessor(fn: () => string | null): void {
   tokenAccessor = fn;
 }
 
+export function authorizationHeaders(): Record<string, string> {
+  const token = tokenAccessor?.();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 let unauthorizedHandler: (() => void) | null = null;
 
 export function registerUnauthorizedHandler(fn: () => void): void {
@@ -57,7 +62,9 @@ export async function apiFetch<T = unknown>(
   if (!res.ok) {
     const detail =
       parsed && typeof parsed === "object" && "detail" in parsed
-        ? String((parsed as { detail: unknown }).detail)
+        ? typeof (parsed as { detail: unknown }).detail === "string"
+          ? String((parsed as { detail: unknown }).detail)
+          : "Some fields are invalid. Check your entries and try again."
         : res.statusText || text.slice(0, 200);
     if (res.status === 401) unauthorizedHandler?.();
     throw new ApiError(res.status, detail);

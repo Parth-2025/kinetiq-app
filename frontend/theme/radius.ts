@@ -1,1 +1,1 @@
-export const RADIUS = { s: 4, m: 6, l: 8, xl: 12, circular: 999 } as const;
+export const RADIUS = { s: 0, m: 0, l: 0, xl: 0, circular: 999 } as const;

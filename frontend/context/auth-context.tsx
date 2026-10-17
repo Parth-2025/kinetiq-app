@@ -1,5 +1,7 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   useCallback,
@@ -10,7 +12,11 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 
-import { registerTokenAccessor, registerUnauthorizedHandler } from "@/config/api";
+import {
+  apiFetch,
+  registerTokenAccessor,
+  registerUnauthorizedHandler,
+} from "@/config/api";
 import { auth0Config } from "@/config/auth0";
 import { clearApiCache } from "@/hooks/use-api";
 
@@ -26,8 +32,13 @@ export interface Auth0User {
   [key: string]: unknown;
 }
 
+export type AccountRole = "athlete" | "coach";
+
 interface AuthContextValue {
   user: Auth0User | null;
+  role: AccountRole | null;
+  isRoleLoading: boolean;
+  selectRole: (role: AccountRole) => Promise<void>;
   isLoading: boolean;
   authError: string | null;
   login: () => Promise<void>;
@@ -43,6 +54,7 @@ interface AuthContextValue {
 
 const STORAGE_USER_KEY = "auth0_user";
 const STORAGE_TOKEN_KEY = "auth0_token";
+const STORAGE_PENDING_ROLE_KEY = "kinetiq_pending_role";
 export const STORAGE_VERIFIER_KEY = "pkce_verifier";
 export const STORAGE_STATE_KEY = "auth0_state";
 
@@ -85,8 +97,7 @@ function logAuth0Urls(context: string) {
   const redirectUri = getRedirectUri();
   const webOrigin = getWebOrigin();
   const nativeLogoutUri = getNativeLogoutUri();
-  const logoutReturnUri =
-    Platform.OS === "web" ? redirectUri : nativeLogoutUri;
+  const logoutReturnUri = Platform.OS === "web" ? redirectUri : nativeLogoutUri;
 
   console.log(`[Auth0 Debug] ${context}`);
   console.log(`[Auth0 Debug] Domain: ${auth0Config.domain}`);
@@ -146,10 +157,7 @@ function clearWebPkceSession() {
   sessionStorage.removeItem(STORAGE_STATE_KEY);
 }
 
-function formatAuth0Error(
-  error: string,
-  description?: string | null,
-): string {
+function formatAuth0Error(error: string, description?: string | null): string {
   const normalizedError = error.toLowerCase();
   const normalizedDescription = (description ?? "").toLowerCase();
 
@@ -181,8 +189,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Auth0User | null>(null);
+  const [role, setRole] = useState<AccountRole | null>(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
   // Stay in loading state until we've validated the session.
-  const [isLoading, setIsLoading] = useState(Platform.OS === "web");
+  const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -192,49 +202,144 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     registerTokenAccessor(() => tokenRef.current);
     registerUnauthorizedHandler(() => {
       setUser(null);
+      setRole(null);
       setAccessToken(null);
+      tokenRef.current = null;
       if (Platform.OS === "web") clearWebSession();
+      else void SecureStore.deleteItemAsync(STORAGE_TOKEN_KEY).catch(() => {});
       clearApiCache();
     });
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    if (!user || !accessToken) {
+      setIsRoleLoading(false);
+      return;
+    }
+    setIsRoleLoading(true);
+    (async () => {
+      const account = await apiFetch<{
+        role: AccountRole;
+        onboarding_complete: boolean;
+      }>("/studio/account");
+      const pending = await AsyncStorage.getItem(STORAGE_PENDING_ROLE_KEY);
+      let nextRole = account.role;
+      if (
+        !account.onboarding_complete &&
+        (pending === "athlete" || pending === "coach")
+      ) {
+        const updated = await apiFetch<{ role: AccountRole }>(
+          "/studio/account",
+          { method: "PATCH", body: { role: pending } },
+        );
+        nextRole = updated.role;
+      }
+      if (cancelled) return;
+      setRole(nextRole);
+      await AsyncStorage.removeItem(STORAGE_PENDING_ROLE_KEY);
+    })()
+      .catch((error) => {
+        if (!cancelled) {
+          setRole(null);
+          setAuthError(
+            error instanceof Error
+              ? error.message
+              : "Your workspace could not load.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsRoleLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.sub, accessToken]);
+
+  const selectRole = useCallback(
+    async (nextRole: AccountRole) => {
+      if (user) {
+        try {
+          await apiFetch("/studio/account", {
+            method: "PATCH",
+            body: { role: nextRole },
+          });
+          clearApiCache();
+          setRole(nextRole);
+          setAuthError(null);
+        } catch (error) {
+          setAuthError(
+            error instanceof Error
+              ? error.message
+              : "Your workspace could not be saved.",
+          );
+          throw error;
+        }
+      } else {
+        await AsyncStorage.setItem(STORAGE_PENDING_ROLE_KEY, nextRole);
+        setRole(nextRole);
+      }
+    },
+    [user],
+  );
+
+  useEffect(() => {
     logAuth0Urls("App boot");
   }, []);
 
-  // On web startup: validate any stored token against Auth0 before trusting it.
+  // Restore native tokens from platform secure storage; web retains the existing flow.
   useEffect(() => {
-    if (Platform.OS !== "web") return;
-
+    let cancelled = false;
     (async () => {
       try {
-        const token = localStorage.getItem(STORAGE_TOKEN_KEY);
-        if (token) {
-          const validatedUser = await validateToken(token);
-          if (validatedUser) {
-            setUser(validatedUser);
-            setAccessToken(token);
-            // Refresh the stored user with the latest data from Auth0.
+        const token =
+          Platform.OS === "web"
+            ? localStorage.getItem(STORAGE_TOKEN_KEY)
+            : await SecureStore.getItemAsync(STORAGE_TOKEN_KEY);
+        if (!token) return;
+        const validatedUser = await validateToken(token);
+        if (cancelled) return;
+        if (validatedUser) {
+          tokenRef.current = token;
+          setAccessToken(token);
+          setUser(validatedUser);
+          if (Platform.OS === "web")
             localStorage.setItem(
               STORAGE_USER_KEY,
               JSON.stringify(validatedUser),
             );
-          } else {
-            // Token expired or invalid — clear session and force re-login.
-            clearWebSession();
-          }
+        } else {
+          if (Platform.OS === "web") clearWebSession();
+          else await SecureStore.deleteItemAsync(STORAGE_TOKEN_KEY);
         }
       } catch {
-        clearWebSession();
+        if (!cancelled)
+          setAuthError(
+            "Your saved session could not be restored. Please sign in again.",
+          );
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const storeUser = useCallback((userData: Auth0User, accessToken?: string) => {
     setUser(userData);
-    if (accessToken) setAccessToken(accessToken);
+    if (accessToken) {
+      tokenRef.current = accessToken;
+      setAccessToken(accessToken);
+      if (Platform.OS !== "web")
+        void SecureStore.setItemAsync(STORAGE_TOKEN_KEY, accessToken).catch(
+          () =>
+            setAuthError(
+              "Signed in, but this device could not securely save your session.",
+            ),
+        );
+    }
     if (Platform.OS === "web") {
       localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
       if (accessToken) localStorage.setItem(STORAGE_TOKEN_KEY, accessToken);
@@ -344,17 +449,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const redirectUri = getRedirectUri();
-      const tokenResponse = await fetch(`https://${auth0Config.domain}/oauth/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          grant_type: "authorization_code",
-          client_id: auth0Config.clientId,
-          code,
-          redirect_uri: redirectUri,
-          code_verifier: verifier,
-        }),
-      });
+      const tokenResponse = await fetch(
+        `https://${auth0Config.domain}/oauth/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            grant_type: "authorization_code",
+            client_id: auth0Config.clientId,
+            code,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+          }),
+        },
+      );
       const tokens = await tokenResponse.json();
 
       if (!tokenResponse.ok || !tokens.access_token) {
@@ -372,6 +480,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // ── Web: clear token + full-page redirect logout ──────────────────────
     if (Platform.OS === "web") {
       clearWebSession();
+      tokenRef.current = null;
+      setUser(null);
       setAccessToken(null);
       clearApiCache();
       const logoutUrl =
@@ -379,12 +489,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `?client_id=${encodeURIComponent(auth0Config.clientId)}` +
         `&returnTo=${encodeURIComponent(getRedirectUri())}`;
       window.location.href = logoutUrl;
+      setRole(null);
       return;
     }
 
     // ── Native ────────────────────────────────────────────────────────────
     setIsLoading(true);
     try {
+      await SecureStore.deleteItemAsync(STORAGE_TOKEN_KEY);
+      tokenRef.current = null;
+      setUser(null);
+      setRole(null);
+      setAccessToken(null);
+      clearApiCache();
       const returnTo = getNativeLogoutUri();
       const logoutUrl =
         `https://${auth0Config.domain}/v2/logout` +
@@ -392,6 +509,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `&returnTo=${encodeURIComponent(returnTo)}`;
       await WebBrowser.openAuthSessionAsync(logoutUrl, returnTo);
       setUser(null);
+      setRole(null);
       setAccessToken(null);
       clearApiCache();
     } finally {
@@ -403,6 +521,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        role,
+        isRoleLoading,
+        selectRole,
         isLoading,
         authError,
         login,

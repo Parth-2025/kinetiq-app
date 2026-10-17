@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
@@ -8,16 +8,21 @@ import { Screen } from "@/components/ui/Screen";
 import { Text } from "@/components/ui/Text";
 import { ApiError, apiFetch } from "@/config/api";
 import { useAuth } from "@/context/auth-context";
+import { invalidate } from "@/hooks/use-api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { isValidUsername, normalizeUsernameInput } from "@/services/user-profile";
+import {
+  isValidUsername,
+  normalizeUsernameInput,
+} from "@/services/user-profile";
 import { useTheme } from "@/theme";
 
-const FORMAT_HINT = "3–20 characters: lowercase letters, numbers, or underscores.";
+const FORMAT_HINT =
+  "3–20 characters: lowercase letters, numbers, or underscores.";
 
 export default function UsernameOnboardingScreen() {
   const t = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { profile, isLoading } = useUserProfile(user?.sub);
 
   const [raw, setRaw] = useState("");
@@ -56,7 +61,10 @@ export default function UsernameOnboardingScreen() {
   }, [username, formatValid]);
 
   if (!user) return <Redirect href="/login" />;
-  if (!isLoading && profile?.username) return <Redirect href="/(tabs)" />;
+  if (!isLoading && profile?.username)
+    return (
+      <Redirect href={(role === "coach" ? "/coach" : "/(tabs)") as Href} />
+    );
 
   const fieldState: "default" | "error" | "success" =
     !username || checking
@@ -85,9 +93,11 @@ export default function UsernameOnboardingScreen() {
     setError(null);
     try {
       await apiFetch("/me/profile", { method: "PATCH", body: { username } });
-      router.replace("/(tabs)");
+      invalidate("me:");
+      router.replace("/onboarding/studio" as Href);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) setError("That username is taken.");
+      if (err instanceof ApiError && err.status === 409)
+        setError("That username is taken.");
       else if (err instanceof ApiError && err.status === 400)
         setError(err.detail || "That username format is not allowed.");
       else setError("We could not save your username. Please try again.");

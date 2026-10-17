@@ -12,8 +12,8 @@ type MeResponse = {
 };
 
 export function useUserProfile(userSub: string | null | undefined) {
-  const key = userSub ? "me" : null;
-  const { value, isLoading, error } = useApiQuery<MeResponse>(
+  const key = userSub ? `me:${userSub}` : null;
+  const { value, isLoading, error, refetch } = useApiQuery<MeResponse>(
     key,
     key ? "/me" : null,
   );
@@ -26,5 +26,11 @@ export function useUserProfile(userSub: string | null | undefined) {
         updatedAt: "",
       }
     : null;
-  return { profile, isLoading, error, hasUsername: Boolean(value?.username) };
+  return {
+    profile,
+    isLoading,
+    error,
+    refetch,
+    hasUsername: Boolean(value?.username),
+  };
 }

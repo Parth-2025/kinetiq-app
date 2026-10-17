@@ -1,49 +1,46 @@
-# Rim Ready Frontend
+# KinetiQ Frontend
 
-Expo frontend for basketball shot analysis, wired to the KinetiQ FastAPI backend and Firebase Realtime Database.
+Expo SDK 54 app for KinetiQ training analysis and the Performance Studio.
 
-## Runtime setup
+## Runtime configuration
 
-1. Review `frontend/.env`
-2. Confirm the Firebase `EXPO_PUBLIC_FIREBASE_*` values
-3. Confirm `EXPO_PUBLIC_AUTH0_DOMAIN` and `EXPO_PUBLIC_AUTH0_CLIENT_ID` are set for the Auth0 application
-4. Confirm `EXPO_PUBLIC_KINETIQ_API_URL` points at the backend, currently `http://172.20.10.13:8000`
+Set these values in `frontend/.env` for local development:
 
-## Auth0 CAPTCHA / Bot Detection
+- `EXPO_PUBLIC_AUTH0_DOMAIN` and `EXPO_PUBLIC_AUTH0_CLIENT_ID` for the Auth0 application
+- `EXPO_PUBLIC_KINETIQ_API_URL` for the API base URL
 
-This app uses Auth0 Universal Login for both web and native sign-in. The CAPTCHA itself is rendered by Auth0, not by Expo, so enabling the challenge requires an Auth0 dashboard change in addition to the frontend code in this repo.
+Local API URLs such as `http://127.0.0.1:8000` are for development only. A release build must use the deployed HTTPS API host; configure it through the release environment and verify it before building. Do not ship the current sample/private-network endpoint.
 
-1. In the Auth0 Dashboard, enable Universal Login for the application.
-2. Turn on Bot Detection for the tenant so Auth0 can require a CAPTCHA challenge during suspicious login or signup attempts.
-3. Make sure the application's Allowed Callback URLs include the Expo web callback and native callback handled by `frontend/context/auth-context.tsx`.
-4. If Auth0 redirects back with a CAPTCHA or verification error, the login screen will now display that message instead of silently bouncing back to `/login`.
+## Auth0 callback configuration
 
-## Start the app
+The native app scheme is `rimready` to preserve the existing Auth0 redirect flow. Do not change the scheme or native callback URL without updating and verifying the Auth0 Allowed Callback URLs for the release application. Include the web callback only if web sign-in is part of that release. CAPTCHA and bot-detection behavior is configured in the Auth0 dashboard.
+
+## Run locally
 
 ```bash
-cd frontend
 npm install
 npx expo start
 ```
 
-## Backend dependency
+Use `npx expo start --ios`, `npx expo start --android`, or `npx expo start --web` to select a target. Native camera capture is available only in a native build; web users select a video file.
 
-The API now lives in the workspace root at `../backend`.
+## Native builds
 
-Start it with:
+`eas.json` defines development, internal preview, and store production profiles. Configure the EAS project and Apple/Android signing credentials before attempting store builds. A production EAS build has not been run and no signing credentials or EAS project ID are committed here.
 
-```bash
-cd ../backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+The package identifiers are `io.kinetiq.app` for iOS and Android. Treat these as permanent once the corresponding store records are created. The existing Auth0 scheme remains `rimready`.
 
-## Flow
+## Backend
 
-- Upload a video from the Upload tab
-- The app sends it to the KinetiQ `/analyze` endpoint
-- The backend returns overall score, phase scores, feedback, pose GIF, and phase frames
-- The full analysis session is saved under `users/{userId}/analysisSessions/{sessionId}` in Firebase Realtime Database
-- `shot-breakdown` and `phase-detail` read the saved session instead of using hard-coded placeholder values
+The API source is in `../backend`. See [backend setup](../backend/studio/README.md) for the Studio service, migrations, and worker. The release API must be reachable over HTTPS from supported devices.
+
+## Release readiness
+
+Ready sessions now offer **Save mannequin revision** to the session owner.
+Select a saved revision to replay fixed estimated limb lengths with neutral
+skinned meshes, or select **Landmark preview** for the original joint display.
+The backend needs migration `0009_display_rig_revisions`. Saved display fitting
+does not change metrics or calibrate anatomy from height/wingspan. Device GL
+verification remains pending; see the root implementation checklist.
+
+See [App Store and native beta readiness](../docs/release/app-store-readiness.md) for the concrete release gates, required external configuration, and validation limits.

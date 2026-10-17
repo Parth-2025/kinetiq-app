@@ -61,3 +61,6 @@ backend/.venv/
 htmlcov/
 .cache/
 *.task
+
+# Temporary Studio recordings (never commit athlete footage)
+backend/.studio-media/

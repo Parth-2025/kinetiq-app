@@ -1,0 +1,2 @@
+Backend API and motion analysis.
+Routers serve requests; analyzer scores sports; db and auth support accounts and sessions; tests check behavior.
